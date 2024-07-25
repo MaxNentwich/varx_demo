@@ -3,7 +3,7 @@
 %% Define patients
 example_pat = 'NS127_02';
 
-signal_type = 'HFA';
+signal_type = 'LFP';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient;
@@ -32,7 +32,7 @@ R_diff_features = cell(1, length(patients));
 for pat = 1:length(patients)
     
     if strcmp(signal_type, 'LFP')
-        load(sprintf('../data/models/%s_varx_models.mat', patients{pat}), 'm_varx', 'm_varx_features', 'feature_combos')
+        load(sprintf('../results/models/%s_varx_models.mat', patients{pat}), 'm_varx', 'm_varx_features', 'feature_combos')
         idx_none = ismember(feature_combos, 'None');
         m_var = m_varx_features{idx_none};
     elseif strcmp(signal_type, 'HFA')
@@ -79,7 +79,7 @@ for pat = 1:length(patients)
     for feat = 1:length(feature_combos)
         R_varx_feat(:,:,feat) = abs(sqrt(1-exp(-m_varx_features{feat}.A_Deviance/m_varx_features{feat}.T)));  
     end
-
+    
     if select_sig
 
         idx_sig_varx = m_varx.A_pval < p_thresh;

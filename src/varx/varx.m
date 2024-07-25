@@ -28,7 +28,8 @@ function m = varx(Y,na,X,nb,lambda)
 %
 % A_Deviance, B_Deviance ,T are Deviance and number of sample used in the
 % estimation of p-values, and Deviance/T can serve as a measure of effect
-% size, and can be used to compute R-square: R2 = 1 - exp(-Devinace/T)
+% size, and can be used to compute generalized R-square: R2 = 1 -
+% exp(-Devinace/T).
 %
 % varx(Y,na,X,base,lambda) If base is not a scalar, it is assumed that it
 % represent basis functions for filters B of size [filter length, number of
@@ -73,6 +74,7 @@ function m = varx(Y,na,X,nb,lambda)
 %     01/09/2024 returns D and T, with D/T as a rough measure of effect size
 %     04/03/2024 Changed to Tikhonov regularization so that all variables have same regularization regardless of power. pvalues otherwise not correct when power very different after applying basis functions 
 %     04/11/2024 Changed output to model structure to work with varx_display, output was getting too complicated.    
+%     05/16/2024 Aimar, changed so the model no computes the A and B Rvalues inside the main varx script
 
 % If not simulating eXternal MA channel then xdim=0
 if nargin<3 | nb==0, X=[]; nb=0; end 
@@ -139,9 +141,9 @@ my_toc('time to fit VARX model',0.5)
 m.A  = permute(reshape(AB(1:ydim*na,    :),na,ydim,ydim),[1 3 2]);
 m.B = permute(reshape(AB(1+ydim*na:end,:),params(end),xdim,ydim),[1 3 2]);
 
-% if we used a base, return both base coefficients and filters B
+% if we used a base, return filters B with base applied
+m.B_coeff = m.B;
 if ~isempty(m.base)
-    m.B_coeff = m.B; 
     m.B = tensorprod(m.base,m.B_coeff,2,1);
 end
 
@@ -157,13 +159,16 @@ for i=xdim:-1:1 % same as above but with reduced model removing i-th input
 end
 my_toc('time to compute Granger p-values',5)
 
+
 % store additional outputs in model structure
 m.A_pval = pval(:,1:ydim);
 m.B_pval = pval(:,ydim+1:end);
 m.A_Deviance = Deviance(:,1:ydim);
 m.B_Deviance = Deviance(:,ydim+1:end);
+m.A_Rvalue = sqrt(1-exp(-m.A_Deviance/T));
+m.B_Rvalue = sqrt(1-exp(-m.B_Deviance/T));
 m.T = T;
- 
+m.s2 = s2/T;
 
 function [h,s2,Bias] = fit_model(Rxx,Rxy,ryy,gamma,base)
 
@@ -186,7 +191,7 @@ Rxyest = Rxx*h;
 s2 = (sum(h.*Rxyest) - 2*sum(h.*Rxy) + ryy)';
 
 if sum(s2<0)
-    warning('Square error of linear regression can not be negative. Please debug ...')    
+    warning('Square error of linear regression can not be negative. Please debug ...')
     keyboard
 end
 

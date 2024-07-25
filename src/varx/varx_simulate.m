@@ -1,7 +1,7 @@
-function [y,e] = varx_simulate(B,A,x,arg4)
+function [y,e] = varx_simulate(B,A,x,arg4,gamma)
 
-% y = varx_simulate(B,A,x) Filters the input x through a VARX system with
-% no noise. This is equivalent to a vectorial ARMA filter.
+% y = varx_simulate(B,A,x) Filters the vector input x through a VARX system
+% with no noise. This is equivalent to a vectorial ARMA filter.
 %
 % y(t) = A*y(t-1) + B*x(t) 
 % 
@@ -11,26 +11,37 @@ function [y,e] = varx_simulate(B,A,x,arg4)
 % current input x(t) does not affect the current output y(t). To implement
 % instant effects, simply advance the input by one sample. x is the input
 % of size [T,xdim] and y has size [T,ydim]. This option can be used to
-% compute the impulse response of the VARX model.
+% compute the impulse response of the VARX model, my calling it separatelly
+% for each xdim set to an impulse.
 %
-% [y,e] = varx_simulate(B,A,x,se) if the third argument is a scalar, then
-% computes output y(t) of a VARX system with external input x(t) and
+% [y,e] = varx_simulate(B,A,x,se) if the fourth argument se is a scalar,
+% then computes output y(t) of a VARX system with external input x(t) and
 % simulated innovation process e(t) with standard deviation se:
 %
 % y(t) = A*y(t-1) + B*x(t) + e(t)
 %
 % e(t) is size [T,ydim] and is drawn as zero mean normal i.i.d. noise.
 %
-% [yest,e] = varx_simulate(B,A,x,y) If the output y(t) is given, then the
-% equation error is computed instead:
+% [yest,e] = varx_simulate(B,A,x,y) If the fourth argument is a vector, it
+% is assumed to be the output y(t) and the equation error is computed
+% instead:
 % 
 % yest(t) = A*y(t-1) + B*x(t); 
 % e(t) = yest(t) - y(t)
 %
-% If the intention is to simulate an AR model only, then the set input
+% If the intention is to simulate an AR model only, then set the input
 % x=zeros(T,0); B=zeros(0,ydim,0); with xdim=0 and nb=0.
 %
-% See varx.m for how to estimate A and B from x,d data.
+% % [y,e] = varx_simulate(B,A,x,se,gamma) if a fifth argument gamma is
+% given, then the recursion also implements real-time gain adapation:
+%
+% y(t) = [A*y(t-1) + B*x(t) + e(t)] / ypower
+% ypower = (1-gamma)*ypower + gamma*y(t)^2
+%
+% This gain adaptation is no longer a conventional varx model, but the varx
+% estimation works nearly the same.
+%
+% See varx.m for how to estimate A and B from x,y data.
 
 % (c) 08/01/2023 Lucas C Parra
 %     08/02/2023 added zero padding at the start
@@ -61,11 +72,14 @@ elseif size(arg4,1)==1 % 4th argument scalar: simulated additive innovation
 else % 4th argument vector: compute equation error
     %  this option made the code really uggly. Concider factoring out in
     %  the future as part of filterMIMO.m where it was before, and instead
-    %  allow user to provided their own e(t) data here.
+    %  allow user to provided their own e(t) data here
     y = zeros(T,ydim); 
     d = arg4; % called desired output when fitting B and A to observed x,y
     ER=1; 
 end 
+if ~exist('gamma','var') % no gain adaptation by default
+    gamma=0;
+end
 
 nb = size(B,1);
 na = size(A,1);
@@ -74,6 +88,7 @@ na = size(A,1);
 Q = max(na,nb);
 x = [zeros(Q,xdim); x]; y = [zeros(Q,ydim); y]; if ER, d = [zeros(Q,ydim); d]; end
 
+ypower = 1;
 for t=Q+1:size(y,1)
     if ER % equation error based on observed output ycatual
         ypast = d(t-1:-1:t-na,:);
@@ -82,6 +97,10 @@ for t=Q+1:size(y,1)
     end
     xpast = x(t:-1:t-nb+1,:);
     y(t,:) = y(t,:) + tensorprod(A,ypast,[1 3],[1 2])' + tensorprod(B,xpast,[1 3],[1 2])';
+    if gamma % real time gain adaptation
+        ypower = (1-gamma)*ypower + gamma*y(t,:).^2;
+        y(t,:) = y(t,:)./sqrt(ypower);
+    end
 end
 
 % remove zero padding
