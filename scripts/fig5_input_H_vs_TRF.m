@@ -3,9 +3,9 @@
 %% Define patients
 example_pat = 'NS127_02';
 
-signal_type = 'HFA';
+signal_type = 'LFP';
 
-% Stimulus 3 -> audio
+% Stimulus 3 -> audio; 1 -> fixations; 2 -> cuts
 idx_stim = 3;
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
@@ -126,9 +126,12 @@ end
 [~, p_pow, ~, stat_pow] = ttest(B_pow_pat, H_pow_pat);
 [~, p_len, ~, stat_len] = ttest(B_len_pat, H_len_pat);
 
+fprintf('Power: t(%d)=%1.2f, p=%1.5f\n', stat_pow.df, stat_pow.tstat, p_pow)
+fprintf('length: t(%d)=%1.2f, p=%1.5f\n', stat_len.df, stat_len.tstat, p_len)
+
 %% Figures for difference of power and length of responses in each patient
 
-figure('Position', [500,275,344,420])
+figure('Position', [500,275,300,420])
 hold on 
 
 for i = 1:length(H_pow_pat)
@@ -149,10 +152,6 @@ title('Power')
 grid on
 
 fontsize(16, 'points')
-
-ax = ancestor(gca, 'axes');
-ax.YAxis.Exponent = 0;
-ytickformat('%0.4f')
 
 exportgraphics(gcf, sprintf('%s/fig5_trf_versus_B_power_across_patients_%s_stim_%d.png', ...
     fig_dir, signal_type, idx_stim), 'Resolution', 300)

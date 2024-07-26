@@ -68,7 +68,7 @@ for pat = 1:length(patients)
         idx_sig = eye(size(var_Rvalue)) == 0;
     end
 
-    r_diff_mean(pat) = mean(var_Rvalue(idx_sig==1) - varx_Rvalue(idx_sig==1));
+    r_diff_mean(pat) = mean(varx_Rvalue(idx_sig==1) - var_Rvalue(idx_sig==1));
 
     %% Coordinates
 
@@ -110,7 +110,7 @@ for pat = 1:length(patients)
     R_diff_vec = NaN(sum(idx_sig_feat(:)), length(feature_combos));
     for feat = 1:length(feature_combos)
         R_feat = R_varx_feat(:,:,feat);
-        R_diff_vec(:,feat) = R_varx_none(idx_sig_feat) - R_feat(idx_sig_feat);     
+        R_diff_vec(:,feat) = R_feat(idx_sig_feat) - R_varx_none(idx_sig_feat);     
     end
 
     R_diff_features{pat} = mean(R_diff_vec);
@@ -118,13 +118,18 @@ for pat = 1:length(patients)
 end
 
 %% Difference of significant cannels and effect size across patients
-n_sig_diff = n_sig_var - n_sig_varx;
+n_sig_diff = n_sig_varx - n_sig_var;
 [~,p_chans,~,stats_chans] = ttest(n_sig_diff);
 
-[~,p_rval,~,stats_rval] = ttest(abs(r_diff_mean));
+[~,p_rval,~,stats_rval] = ttest(real(r_diff_mean));
+
+fprintf('Ratio of significant channels: t(%d)=%1.2f, p=%1.5f\n', ...
+    stats_chans.df, stats_chans.tstat, p_chans)
+fprintf('Effect size: t(%d)=%1.2f, p=%1.5f\n', ...
+    stats_rval.df, stats_rval.tstat, p_rval)
 
 % Models with different features
-R_feat_mat = abs(cell2mat(R_diff_features));
+R_feat_mat = real(cell2mat(R_diff_features));
 R_feat_mat = reshape(R_feat_mat, [length(feature_combos), length(R_diff_features)]);
 
 ci = zeros(size(R_feat_mat,1),2);
@@ -151,6 +156,19 @@ end
 [~,p_all_fix,~,stats_all_fix] = ttest(R_feat_mat(ismember(feature_combos, 'Fixation, Cuts and Sound'), :),  ...
     R_feat_mat(ismember(feature_combos, 'Fixations'), :));
 
+fprintf('Fixations vs cuts: t(%d)=%1.2f, p=%1.5f\n', ...
+    stats_fix_cuts.df, stats_fix_cuts.tstat, p_fix_cuts)
+fprintf('Fixations vs sound: t(%d)=%1.2f, p=%1.5f\n', ...
+    stats_fix_sound.df, stats_fix_sound.tstat, p_fix_sound)
+fprintf('Cuts vs sound: t(%d)=%1.2f, p=%1.5f\n', ...
+    stats_cuts_sound.df, stats_cuts_sound.tstat, p_cuts_sound)
+fprintf('All vs sound: t(%d)=%1.2f, p=%1.5f\n', ...
+    stats_all_sound.df, stats_all_sound.tstat, p_all_sound)
+fprintf('All vs cuts: t(%d)=%1.2f, p=%1.5f\n', ...
+    stats_all_cuts.df, stats_all_cuts.tstat, p_all_cuts)
+fprintf('All vs fixations: t(%d)=%1.2f, p=%1.5f\n', ...
+    stats_all_fix.df, stats_all_fix.tstat, p_all_fix)
+
 %% Plot an example
 idx_example = ismember(patients, example_pat);
 
@@ -167,18 +185,18 @@ t = tiledlayout(1,3);
 
 ax1 = nexttile;
 
-imagesc(log10(model_var{idx_example}.A_pval))
+imagesc(log10(model_varx{idx_example}.A_pval))
 
 clim(ax1, plot_range)
 axis square
 colormap(ax1, slanCM('summer'))
 xlabel('Channels')
 ylabel('Channels')
-title('No Inputs')
+title('Inputs')
 
 ax2 = nexttile;
 
-imagesc(log10(model_varx{idx_example}.A_pval))
+imagesc(log10(model_var{idx_example}.A_pval))
 
 clim(ax2, plot_range)
 axis square
@@ -187,18 +205,18 @@ cb = colorbar();
 ylabel(cb,'log p-value','Rotation',90)
 xlabel('Channels')
 yticks([])
-title('Inputs')
+title('No Inputs')
 
 ax3 = nexttile;
 
-imagesc(log10(model_var{idx_example}.A_pval) - log10(model_varx{idx_example}.A_pval))
+imagesc(log10(model_varx{idx_example}.A_pval) - log10(model_var{idx_example}.A_pval))
 
 clim(ax3, 0.05*plot_range_diff)
 
 axis square
 colormap(ax3, slanCM('bwr'))
 cb = colorbar(); 
-ylabel(cb,'\Delta log p-value (No Input - Input)' ,'Rotation',90)
+ylabel(cb,'\Delta log p-value (Input - No Input)' ,'Rotation',90)
 xlabel('Channels')
 yticks([])
 title('Difference')
@@ -229,7 +247,7 @@ xlim([-0.3, 0.3])
 ylim_abs =  1.2 * max(abs(n_sig_diff));
 ylim([-ylim_abs, ylim_abs])
 set(gca, 'YAxisLocation', 'right')
-ylabel('\Delta Ratio (No Input - Input)')
+ylabel('\DeltaRatio (Input - No Input)')
 
 title('Sig. Connections')
 
@@ -256,13 +274,7 @@ xticks([])
 xlim([-0.3, 0.3])
 ylim([-ylim_abs, ylim_abs])
 set(gca, 'YAxisLocation', 'right')
-ylabel('Mean \DeltaR (No Input - Input)')
-
-if strcmp(signal_type, 'LFP')
-    ax = ancestor(gca, 'axes');
-    ax.YAxis.Exponent = 0;
-    ytickformat('%0.4f')
-end
+ylabel('Mean \DeltaR (Input - No Input)')
 
 title('Effect size')
 
@@ -282,8 +294,8 @@ plot(flipud(ci(:,2)), 'k*-')
 xticklabels(fliplr(feature_combos))
 xtickangle(45)
 
-ylabel('Mean \Delta R-value')
-title('No Input - Input')
+ylabel('Mean \DeltaR')
+title('Input - No Input')
 grid('on')
 
 fontsize(18, 'points')

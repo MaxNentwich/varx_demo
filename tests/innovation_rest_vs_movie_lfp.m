@@ -1,4 +1,4 @@
-addpath('../src/')
+addpath('../src/varx')
 addpath('../src/matlab/Violinplot-Matlab-master/'); % https://github.com/bastibe/Violinplot-Matlab/tree/master
 
 subjects = dir('/media/max/Workspace/Data/varx_data/NS*');

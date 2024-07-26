@@ -2,7 +2,7 @@
 
 %% Define patients
 example_pat = 'NS127_02';
-signal_type = 'LFP';
+signal_type = 'HFA';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient;
@@ -125,6 +125,8 @@ set(gca, 'XDir', 'reverse')
 exportgraphics(gcf, sprintf('%s/fig7_direction_vs_t1wt2w_%s.png', fig_dir, signal_type), 'Resolution', 300)
 
 [r_area, p_area] = corr(myelin_vals, median_area);
+
+fprintf('r=%1.3f, p=%1.3f\n', r_area, p_area)
 
 %% Plot example of matrix for one patient -> order by hierarchy
 

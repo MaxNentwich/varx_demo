@@ -308,7 +308,7 @@ for pat = 1:length(patients)
                 X_rest(:,2:3) = X_dme5(:,2:3);
 
                 m_varx_mov{idx_rest_indiv} = varx(Y_rest,na,X_rest,nb,gamma);
-                m_varx_mov_hfa{idx_rest_indiv} = varx(HFA_rest,na_hfa,X_rest,nb,gamma);
+                m_varx_mov_hfa{idx_rest_indiv} = varx(HFA_rest,na,X_rest,nb,gamma);
             
             end
 
@@ -344,7 +344,7 @@ for pat = 1:length(patients)
         mTRF_hfa = permute(reshape(mTRF_hfa,L,xdim,ydim),[1 3 2]);
     
         %% Save data
-        save(out_file, 'm_varx', 'm_var', 'H', 'mTRF', 'm_varx_mov', ...
+        save(out_file, 'm_varx', 'm_var', 'H', 'mTRF', 'm_varx_mov', 'm_var_mov', ...
             'm_varx_hfa', 'm_var_hfa', 'H_hfa', 'mTRF_hfa', 'm_varx_mov_hfa', ...
             'm_varx_features', 'm_varx_hfa_features', 'vid_recs', 'feature_combos', ...
             'L', 'fs_neural', 'labels')

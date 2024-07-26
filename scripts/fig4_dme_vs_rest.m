@@ -133,6 +133,13 @@ n_sig_diff(idx_empty) = [];
 [~, p_effect_size, ~, stat_effect_size] = ttest(varx_diff_mean);
 [~, p_movie, ~, stat_movie] = ttest(varx_diff_dme_mean);
 
+fprintf('Ratio of significant channels: t(%d)=%1.2f, p=%1.5f\n', ...
+    stat_n_sig.df, stat_n_sig.tstat, p_n_sig)
+fprintf('Effect size: t(%d)=%1.2f, p=%1.5f\n', ...
+    stat_effect_size.df, stat_effect_size.tstat, p_effect_size)
+fprintf('Movie features: t(%d)=%1.2f, p=%1.5f\n', ...
+    stat_movie.df, stat_movie.tstat, p_movie)
+
 %% Save the data for a spatial plot
 idx_example = ismember(patients, example_pat);
 
@@ -222,11 +229,7 @@ ylabel('\Delta Ratio (Movie - Rest)')
 
 ax = ancestor(gca, 'axes');
 ax.YAxis.Exponent = 0;
-if strcmp(signal_type, 'LFP')
-    ytickformat('%0.2f')
-elseif strcmp(signal_type, 'HFA')
-    ytickformat('%0.3f')
-end
+ytickformat('%0.3f')
 
 title('Sig. Connections')
 
