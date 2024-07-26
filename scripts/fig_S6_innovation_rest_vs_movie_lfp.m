@@ -1,8 +1,10 @@
 addpath('../src/varx')
-addpath('../src/matlab/Violinplot-Matlab-master/'); % https://github.com/bastibe/Violinplot-Matlab/tree/master
+addpath('../src/Violinplot-Matlab-master/'); % https://github.com/bastibe/Violinplot-Matlab/tree/master
 
 subjects = dir('/media/max/Workspace/Data/varx_data/NS*');
 condition = {'Despicable_Me_English_5min.mat', 'Resting_fixation.mat',};
+
+font_size = 9;
 
 % We will be plotting one subject at a time, and at the end add a summary.
 % picking nice example subject to go last, so we have it in summayr figure.
@@ -61,6 +63,8 @@ for subj = subject_order
         ylabel('Effect size R')
         if i==1, title('movie'); else, title('rest'); end;
 
+        fontsize(gca, font_size, 'points')
+
     end
 
     % remember for each subject change in power for signal and noise
@@ -73,10 +77,12 @@ for subj = subject_order
     imagesc(1:size(Py{1},2),fbin,db(abs(Py{1}))-db(abs(Py{2}))); h(1)=gca; pos=h(1).Position;
     colorbar('westoutside'); clim([-10 10]); axis xy; h(1).Position=pos;
     ylabel('Frequency (Hz)'); title('y^2 Power spectrum change');  
+    fontsize(gca, font_size, 'points')
     nexttile(4,[1 2]), 
     imagesc(1:size(Pe{1},2),fbin,db(abs(Pe{1}))-db(abs(Pe{2}))); h(2)=gca; pos=h(2).Position;
     colorbar('westoutside'); clim([-10 10]); axis xy; h(2).Position=pos;
     ylabel('Frequency (Hz)'); title('e^2 Power spectrum change'); xlabel('Channels')
+    fontsize(gca, font_size, 'points')
     
     drawnow
 
@@ -93,9 +99,13 @@ violinplot([tmp1;tmp2],[repmat("y^2",size(tmp1,1),1);repmat("e^2",size(tmp2,1),1
 ax=axis; plot(ax(1:2),[0 0],'k'); hold off 
 ylim([-1 1]*max(abs(ax(3:4))))
 title('Median Channel'); ylabel('Power change (dB)')
+fontsize(gca, font_size, 'points')
+grid on 
+grid minor
 display(['Change in y^2, p=' num2str(signrank(tmp1)) ' Subject N=' num2str(N)])
 display(['Change in e^2, p=' num2str(signrank(tmp2)) ' Subject N=' num2str(N)])
 h(3)=gca;
-sublabel(h,-15,-30);
+
+set(gcf, 'Units', 'inches', 'Position', [5.5,4,6.5,4])
 
 saveas(gca,'../results/figures/noise-power-change.png')

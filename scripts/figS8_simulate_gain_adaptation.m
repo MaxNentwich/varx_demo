@@ -37,14 +37,9 @@ title('e^2/y^2 power ratio change')
 xlabel('Channels'); ylabel('dB'); 
 delete(nexttile(7)) 
 
-% grab the handles of all axes 
-h=get(get(gcf,'Children'),'Children');
-set(gcf, 'CurrentAxes', h(5)); text(-2,0,'A)','FontSize',14,'FontName','Arial','FontWeight','bold');
-set(gcf, 'CurrentAxes', h(3)); text(-3,0,'B)','FontSize',14,'FontName','Arial','FontWeight','bold');
-set(gcf, 'CurrentAxes', h(1)); text(-0.7,1,'C)','FontSize',14,'FontName','Arial','FontWeight','bold');
+set(gcf, 'Units', 'inches', 'Position', [5.5,4,6.5,5])
 
-exportgraphics(gcf,'../figures/simulate_gain_adaptation.png','Resolution',300)
-
+saveas(gcf,'../results/figures/gain_adaptation_simulation.png')
 
 % Finding: the noise estimates are unchanged, but the power is higher with
 % external input, so the innovation noise power is relatively less with

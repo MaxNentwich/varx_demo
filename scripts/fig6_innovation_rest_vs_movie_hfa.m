@@ -1,5 +1,5 @@
-addpath('../src/')
-addpath('../src/matlab/Violinplot-Matlab-master/'); % https://github.com/bastibe/Violinplot-Matlab/tree/master
+addpath('../src/varx')
+addpath('../src/Violinplot-Matlab-master/'); % https://github.com/bastibe/Violinplot-Matlab/tree/master
 
 subjects = dir('/media/max/Workspace/Data/varx_data/NS*');
 condition = {'Despicable_Me_English_5min.mat', 'Resting_fixation.mat',};
@@ -8,6 +8,8 @@ condition = {'Despicable_Me_English_5min.mat', 'Resting_fixation.mat',};
 % picking nice example subject to go last, so we have it in summayr figure.
 last = 1;
 subject_order = 1:length(subjects); subject_order(last)=[]; subject_order=[subject_order last];
+
+font_size = 9;
 
 for subj = subject_order
 
@@ -60,9 +62,13 @@ for subj = subject_order
 
         if i==1 % only show the stimulus condition as rest does not show that much
             h1(i)=nexttile((i-1)*3+1,[1 2]);
-            plot(model{i}.B_Rvalue); axis tight
+          
+            plot(model{i}.B_Rvalue, 'LineWidth', 1.5); axis tight
             ylabel('Effect size R')
-            if i==1, title('B effect during stimulus'); else, title('rest'); end;
+            if i==1, title('B effect during Movie'); else, title('rest'); end;
+            fontsize(gca, font_size, 'points')
+            grid on 
+            grid minor
         end
 
     end
@@ -74,9 +80,13 @@ for subj = subject_order
     % display relative change in signal power for all electrodes
     h1(2)=nexttile(4,[1 2]); 
     noise_diff = db(model{1}.s2./y2{1}') - db(model{2}.s2./y2{2}');
-    plot(noise_diff); axis tight; title('e^2/y^2 (stimulus - rest): BHA recordings')
+    plot(noise_diff, 'LineWidth', 1.5); axis tight; title('e^2/y^2 (Movie - Rest): BHA')
     ylabel('dB difference')
     ax = axis; hold on; plot(ax(1:2),[0 0],'k'); hold off
+
+    fontsize(gca, font_size, 'points')
+    grid on 
+    grid minor
 
     % report change in power for responsive and non-responsive electrodes
     responsive=sum(model{1}.B_pval<0.01/size(y,2)/size(x,2),2)>0; % bonferony corrected
@@ -108,6 +118,10 @@ ax=axis; plot(ax(1:2),[0 0],'k'); hold off
 title('Median Channel')
 ylabel('e^2/y^2 change (dB)')
 
+fontsize(gca, font_size, 'points')
+grid on 
+grid minor
+
 %% simulation with gain adaptation
 gamma = 0.001; e_std=0.5;
 y_stim = varx_simulate(model{subj}.B,model{subj}.A,x,e_std,gamma);  
@@ -120,9 +134,13 @@ noise_diff = db(model_stim.s2'./var(y_stim)) - db(model_rest.s2'./var(y_stim));
 
 %
 h1(3)=nexttile(7,[1 2]); 
-plot(noise_diff); axis tight; title('e^2/y^2 (stimulus - rest): Simulated gain adaptation')
+plot(noise_diff, 'LineWidth', 1.5); axis tight; title('e^2/y^2 (Movie - Rest): Simulated')
 xlabel('Channels'); ylabel('dB difference')
 ax = axis; hold on; plot(ax(1:2),[0 0],'k'); hold off
 
-sublabel(h1,-15,-30);
-saveas(gca,'../figures/noise-power-relative-change_responsive-HFA.png')
+fontsize(gca, font_size, 'points')
+grid on 
+grid minor
+
+set(gcf, 'Units', 'inches', 'Position', [5.5,4,6,4])
+saveas(gca,'../results/figures/noise-power-relative-change_responsive-HFA.png')
