@@ -15,7 +15,7 @@ addpath('../src')
 %% Define patients
 example_pat = 'NS127_02';
 
-signal_type = 'HFA';
+signal_type = 'LFP';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient(table2array(sum(patient_list(:,2:end),2) == 2));
@@ -32,6 +32,13 @@ fsaverage2mni152 = [0.9975, -0.0073, 0.0176, -0.0429; ...
 % Select significant channels or not
 sig_channels = false;
 p_thresh = 0.001;
+
+% Poster settings
+poster_size = true;
+
+if poster_size
+    fig_font = 26;
+end
 
 % Initialize array to collect data
 varX_Rvalue_dme = cell(1, length(patients));
@@ -154,7 +161,11 @@ save(sprintf('%s/fig4_matrices_rest_movie_coords.mat', coord_dir), ...
 plot_max = max([max(varX_Rvalue_dme(:)), max(varX_Rvalue_rest(:))]);
 plot_range = [0, plot_max];
 
-figure('Position', [3000,350,1450,450]);
+if poster_size 
+    figure('Units', 'inches', 'Position', [1,1,20,5]);
+else
+    figure('Position', [3000,350,1450,450]);
+end
 
 tiledlayout(1,3);
 
@@ -202,10 +213,14 @@ title('Difference')
 fontsize(gcf, fig_font, 'points')
 
 exportgraphics(gcf, sprintf('%s/fig4_connectivity_dme_rest_example_%s_%s.png', ...
-    fig_dir, example_pat, signal_type), 'Resolution', 300)
+    fig_dir, example_pat, signal_type), 'Resolution', 600)
 
 %% Difference of all connection for one patient and summary for all patients
-figure('Position', [400,300,725,450])
+if poster_size 
+    figure('Units', 'inches', 'Position', [1,1,8.5,5]);
+else
+    figure('Position', [400,300,725,450])
+end
 
 tiledlayout(1,9);
 
@@ -225,13 +240,13 @@ xlim([-0.3, 0.3])
 ylim_abs =  1.2 * max(abs(n_sig_diff));
 ylim([-ylim_abs, ylim_abs])
 set(gca, 'YAxisLocation', 'right')
-ylabel('\Delta Ratio (Movie - Rest)')
+ylabel(['\DeltaRatio' newline '(Movie - Rest)'])
 
 ax = ancestor(gca, 'axes');
 ax.YAxis.Exponent = 0;
 ytickformat('%0.3f')
 
-title('Sig. Connections')
+title(['Significant' newline 'Connections'])
 
 % Effect size
 nexttile(6,[1,4])
@@ -249,18 +264,20 @@ xlim([-0.3, 0.3])
 ylim_abs =  1.2 * max(abs(varx_diff_mean));
 ylim([-ylim_abs, ylim_abs])
 set(gca, 'YAxisLocation', 'right')
-ylabel('\DeltaR (Movie - Rest)')
+ylabel(['\DeltaR' newline '(Movie - Rest)'])
 
-ax = ancestor(gca, 'axes');
-ax.YAxis.Exponent = 0;
-ytickformat('%0.4f')
+if ~poster_size
+    ax = ancestor(gca, 'axes');
+    ax.YAxis.Exponent = 0;
+    ytickformat('%0.4f')
+end
 
-title('Effect Size')
+title(['Effect' newline 'Size'])
 
 fontsize(gcf, fig_font, 'points')
 
 exportgraphics(gcf, sprintf('%s/fig4_connectivity_dme_rest_summary_%s.png', ...
-    fig_dir, signal_type), 'Resolution', 300)
+    fig_dir, signal_type), 'Resolution', 600)
 
 %% Positive control showing movie data does differ when more features are included
 figure('Position', [400,300,350,450])
@@ -278,11 +295,13 @@ xlim([-0.3, 0.3])
 ylim_abs =  1.2 * max(abs(varx_diff_dme_mean));
 ylim([-ylim_abs, ylim_abs])
 set(gca, 'YAxisLocation', 'right')
-ylabel('\DeltaR (Inputs - No Inputs)')
+ylabel(['\DeltaR' newline '(Inputs - No Inputs)'])
 
-ax = ancestor(gca, 'axes');
-ax.YAxis.Exponent = 0;
-ytickformat('%0.5f')
+if ~poster_size
+    ax = ancestor(gca, 'axes');
+    ax.YAxis.Exponent = 0;
+    ytickformat('%0.5f')
+end
 
 title('Movie')
 

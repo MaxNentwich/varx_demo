@@ -6,6 +6,13 @@ condition = {'Despicable_Me_English_5min.mat', 'Resting_fixation.mat',};
 
 font_size = 9;
 
+% Poster settings
+poster_size = true;
+
+if poster_size
+    fig_font = 26;
+end
+
 % We will be plotting one subject at a time, and at the end add a summary.
 % picking nice example subject to go last, so we have it in summayr figure.
 last = 5;

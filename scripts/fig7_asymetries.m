@@ -2,7 +2,7 @@
 
 %% Define patients
 example_pat = 'NS127_02';
-signal_type = 'HFA';
+signal_type = 'LFP';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient;
@@ -16,6 +16,13 @@ fig_dir = '../results/figures';
 load('../data/movie_subs_table.mat', 'movie_subs_table');
 
 addpath('../src')
+
+% Poster settings
+poster_size = true;
+
+if poster_size
+    fig_font = 26;
+end
 
 %% Run python script to compute T1w/T2w ratio (myelination) in each parcel of the Desikan-Killiany atlas
 % Tricky setup -> ran file in spyder
@@ -111,7 +118,12 @@ X = [ones(length(myelin_vals),1) myelin_vals];
 b = X\median_area;
 median_area_h = X*b;
 
-figure()
+if poster_size 
+    figure('Units', 'inches', 'Position', [1,1,3.5,3.5])
+else
+    figure()
+end
+
 hold on 
 scatter(myelin_vals, median_area, 'filled')
 plot(myelin_vals,median_area_h,'k')
@@ -119,7 +131,7 @@ plot(myelin_vals,median_area_h,'k')
 xlabel('T1w/T2w ratio')
 ylabel('Mean R-R^T')
 grid on
-fontsize(gcf, 20, 'points')
+fontsize(gcf, fig_font, 'points')
 set(gca, 'XDir', 'reverse')
 
 exportgraphics(gcf, sprintf('%s/fig7_direction_vs_t1wt2w_%s.png', fig_dir, signal_type), 'Resolution', 300)
@@ -158,7 +170,12 @@ loc_ex = loc_ex(idx_sort);
 bnd = find(diff(idx_sort_roi(idx_sort)) ~= 0);
 
 % Plot
-figure
+if poster_size 
+    figure('Units', 'inches', 'Position', [1,1,7,4])
+else
+    figure()
+end
+
 imagesc(varx_asym_ex)
 hold on
 
@@ -172,14 +189,14 @@ end
 clim([-c_scale*asym_max, c_scale*asym_max])
 axis square
 colormap(slanCM('bwr'))
-cb = colorbar(); 
-ylabel(cb,'R - R^T' ,'Rotation',270)
 xlabel('Cause y(t-1)')
 ylabel('Effect on y(t)')
 xticks([])
 yticks([])
+cb = colorbar(); 
+ylabel(cb,'R - R^T' ,'Rotation',270)
 
-fontsize(gcf, 16, 'points')
+fontsize(gcf, fig_font, 'points')
 
 exportgraphics(gcf, sprintf('%s/fig7_example_connectivity_%s.png', fig_dir, signal_type), 'Resolution', 300)
 

@@ -21,6 +21,13 @@ addpath('../src')
 
 load('../data/movie_subs_table.mat', 'movie_subs_table');
 
+% Poster settings
+poster_size = true;
+
+if poster_size
+    fig_font = 26;
+end
+
 %% Load data
 
 % Initialize array to collect data
@@ -80,7 +87,7 @@ x_label_str = 'Delay [s]';
 title_str = '';
 out_file = sprintf('%s/fig5_trf_versus_B_audio_env_example_%s_%s_stim_%d.png', fig_dir, example_pat, signal_type, idx_stim);
 
-plot_trf_b(model_varx{idx_example}, H_filter{idx_example}, fs_neural, idx_sig_example, idx_stim, x_label_str, title_str, out_file)
+plot_trf_b(model_varx{idx_example}, H_filter{idx_example}, fs_neural, idx_sig_example, idx_stim, x_label_str, title_str, poster_size, fig_font, out_file)
 
 %% Measure length of responses
 H_avg_pow = mean(H_cat.^2, 2);
@@ -131,7 +138,12 @@ fprintf('length: t(%d)=%1.2f, p=%1.5f\n', stat_len.df, stat_len.tstat, p_len)
 
 %% Figures for difference of power and length of responses in each patient
 
-figure('Position', [500,275,300,420])
+if poster_size 
+    figure('Units', 'inches', 'Position', [1,1,3.57,5]);
+else
+    figure('Position', [500,275,300,420])
+end
+
 hold on 
 
 for i = 1:length(H_pow_pat)
@@ -149,15 +161,21 @@ xticklabels({'B', 'H'})
 ylabel('Average Power [a.u.]')
 title('Power')
 
+set(gca,'YAxisLocation','right')
+
 grid on
 
-fontsize(16, 'points')
+fontsize(gcf, fig_font, 'points')
 
 exportgraphics(gcf, sprintf('%s/fig5_trf_versus_B_power_across_patients_%s_stim_%d.png', ...
     fig_dir, signal_type, idx_stim), 'Resolution', 300)
 
 %% Length of responses
-figure('Position', [500,275,300,420])
+if poster_size 
+    figure('Units', 'inches', 'Position', [1,1,3.57,5]);
+else
+    figure('Position', [500,275,300,420])
+end
 hold on 
 
 for i = 1:length(H_len_pat)
@@ -175,9 +193,11 @@ xticklabels({'B', 'H'})
 ylabel('Length of responses [ms]')
 title('Length')
 
+set(gca,'YAxisLocation','right')
+
 grid on
 
-fontsize(16, 'points')
+fontsize(gcf, fig_font, 'points')
 
 exportgraphics(gcf, sprintf('%s/fig5_trf_versus_B_fwhm_across_patients_%s_stim_%d.png', ...
     fig_dir, signal_type, idx_stim), 'Resolution', 300)

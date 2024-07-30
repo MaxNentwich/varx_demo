@@ -23,7 +23,7 @@ coordinates = data['coords']
 varx_R_rest = np.triu(varx_R_rest) + np.triu(varx_R_rest).T
 varx_R_movie = np.triu(varx_R_movie) + np.triu(varx_R_movie).T
 
-plt.rcParams.update({'font.size': 18})
+plt.rcParams.update({'font.size': 26})
 
 #%% Rest
 plotting.plot_connectome(

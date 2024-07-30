@@ -53,9 +53,9 @@ for p in range(len(myelin_data)):
 
 c_range = np.max([abs(np.nanmin(varx_dir_sort)), abs(np.nanmax(varx_dir_sort))])
 
-plt.rcParams.update({'font.size': 24})
+plt.rcParams.update({'font.size': 26})
 
-plt.figure(figsize=(6,6))
+plt.figure(figsize=(6,5))
 echo_utils.plot_MMP(varx_dir_sort, annot_file=lh_annot_file, save_file=fig_path%'direction_desikan_killiany', 
                     minmax=[-c_range, c_range], bp=0, title=r'$R-R^T$',
                     cmap='seismic')
@@ -64,7 +64,7 @@ echo_utils.plot_MMP(varx_dir_sort, annot_file=lh_annot_file, save_file=fig_path%
 c_min = np.min(myelin_lh_parcels[myelin_lh_parcels != 0])
 c_max = abs(np.max(myelin_lh_parcels))
 
-plt.figure(figsize=(6,6))
+plt.figure(figsize=(6,5))
 echo_utils.plot_MMP(myelin_lh_parcels, annot_file=lh_annot_file, save_file=fig_path%'myelin_desikan_killiany', 
                     minmax=[c_min, c_max], bp=0, title='T1w/T2w', cmap='Reds')
 

@@ -1,5 +1,5 @@
 %% Compare B filter from VARX model and H (including internal dynamics
-function plot_trf_b(m_varx, H, fs, idx_visual, idx_stim, x_label_str, title_str, out_file)
+function plot_trf_b(m_varx, H, fs, idx_visual, idx_stim, x_label_str, title_str, poster_size, fig_font, out_file)
     
     [nb, ~, ~] = size(m_varx.B);
     time_B = (1:nb)/fs;                     
@@ -8,22 +8,39 @@ function plot_trf_b(m_varx, H, fs, idx_visual, idx_stim, x_label_str, title_str,
     plot_range = max(max(abs(H(:,idx_visual,idx_stim))));
     plot_clim = [-plot_range, plot_range];
 
-    fig = figure('Position', [150,300,850,425]);
-    
-    t = tiledlayout(1,14, 'TileSpacing', 'compact');
+    if poster_size
+        fig = figure('Units', 'inches', 'Position', [1,1,8,5]);
+    else
+        fig = figure('Position', [150,300,850,425]);
+    end
 
-    ax1 = nexttile(1, [1,2]);
-    imagesc(log10(m_varx.B_pval(idx_visual, idx_stim)))
-    
-    xticks([])
-    set(ax1,'YAxisLocation','right')
-    ylabel('Channel')
-    cb = colorbar('Location', 'westoutside'); 
-    
-    ylabel(cb,'log p-value','Rotation',90)
-    colormap(ax1, slanCM('summer'))
+    if poster_size
+        t = tiledlayout(1,2, 'TileSpacing', 'compact');
+    else
+        t = tiledlayout(1,14, 'TileSpacing', 'compact');
+    end
 
-    ax2 = nexttile(3, [1,6]);
+    if ~poster_size
+
+        ax1 = nexttile(1, [1,2]);
+        imagesc(log10(m_varx.B_pval(idx_visual, idx_stim)))
+        
+        xticks([])
+        set(ax1,'YAxisLocation','right')
+        ylabel('Channel')
+        cb = colorbar('Location', 'westoutside'); 
+        
+        ylabel(cb,'log p-value','Rotation',90)
+        colormap(ax1, slanCM('summer'))
+
+    end
+
+    if poster_size
+        ax2 = nexttile;
+    else
+        ax2 = nexttile(3, [1,6]);
+    end
+
     imagesc([time_B(1), time_B(end)], [1, length(idx_visual)], m_varx.B(:,idx_visual,idx_stim)')
     
     clim(ax2, plot_clim)
@@ -34,8 +51,13 @@ function plot_trf_b(m_varx, H, fs, idx_visual, idx_stim, x_label_str, title_str,
     clim(ax2, plot_clim)
     colormap(ax2, slanCM('bwr'))
     grid on
-    
-    ax3 = nexttile(9, [1,6]);
+
+    if poster_size
+        ax3 = nexttile;
+    else
+        ax3 = nexttile(9, [1,6]);
+    end
+
     imagesc([time_H(1), time_H(end)], [1, length(idx_visual)], H(:,idx_visual,idx_stim)')
     
     clim(ax3, plot_clim)
@@ -50,9 +72,9 @@ function plot_trf_b(m_varx, H, fs, idx_visual, idx_stim, x_label_str, title_str,
     grid on
     
     title(t, title_str)
-    fontsize(fig, 16, 'points')
+    fontsize(fig, fig_font, 'points')
     
-    exportgraphics(fig, out_file, 'Resolution', 300)
+    exportgraphics(fig, out_file, 'Resolution', 600)
 
     %% Difference of power in significant channels
     B_plot = m_varx.B(:,idx_visual,idx_stim)';

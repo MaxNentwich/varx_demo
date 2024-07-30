@@ -11,6 +11,13 @@ subject_order = 1:length(subjects); subject_order(last)=[]; subject_order=[subje
 
 font_size = 9;
 
+% Poster settings
+poster_size = true;
+
+if poster_size
+    font_size = 26;
+end
+
 for subj = subject_order
 
     % first load two conditions, and find electrodes where power 
@@ -64,7 +71,7 @@ for subj = subject_order
             h1(i)=nexttile((i-1)*3+1,[1 2]);
           
             plot(model{i}.B_Rvalue, 'LineWidth', 1.5); axis tight
-            ylabel('Effect size R')
+            ylabel('R')
             if i==1, title('B effect during Movie'); else, title('rest'); end;
             fontsize(gca, font_size, 'points')
             grid on 
@@ -81,7 +88,7 @@ for subj = subject_order
     h1(2)=nexttile(4,[1 2]); 
     noise_diff = db(model{1}.s2./y2{1}') - db(model{2}.s2./y2{2}');
     plot(noise_diff, 'LineWidth', 1.5); axis tight; title('e^2/y^2 (Movie - Rest): BHA')
-    ylabel('dB difference')
+    ylabel('\DeltadB')
     ax = axis; hold on; plot(ax(1:2),[0 0],'k'); hold off
 
     fontsize(gca, font_size, 'points')
@@ -135,12 +142,18 @@ noise_diff = db(model_stim.s2'./var(y_stim)) - db(model_rest.s2'./var(y_stim));
 %
 h1(3)=nexttile(7,[1 2]); 
 plot(noise_diff, 'LineWidth', 1.5); axis tight; title('e^2/y^2 (Movie - Rest): Simulated')
-xlabel('Channels'); ylabel('dB difference')
+xlabel('Channels'); ylabel('\DeltadB')
 ax = axis; hold on; plot(ax(1:2),[0 0],'k'); hold off
 
 fontsize(gca, font_size, 'points')
 grid on 
 grid minor
 
-set(gcf, 'Units', 'inches', 'Position', [5.5,4,6,4])
-saveas(gca,'../results/figures/noise-power-relative-change_responsive-HFA.png')
+if poster_size
+    set(gcf, 'Units', 'inches', 'Position', [1,1,15,10])
+else
+    set(gcf, 'Units', 'inches', 'Position', [5.5,4,6,4])
+end
+
+exportgraphics(gcf, '../results/figures/noise-power-relative-change_responsive-HFA.png', ...
+    'Resolution', 600)

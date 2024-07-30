@@ -23,7 +23,7 @@ select_sig = false;
 poster_size = true;
 
 if poster_size
-    fig_font = 26;
+    fig_font = 24;
 end
 
 %% Load data
@@ -187,7 +187,7 @@ plot_diff = max(abs(log10(model_var{idx_example}.A_pval(:)) - log10(model_varx{i
 plot_range_diff = [-plot_diff, plot_diff];
 
 if poster_size 
-    fig1 = figure('Units', 'inches', 'Position', [1,1,20,5]);
+    fig1 = figure('Units', 'inches', 'Position', [1,1,15,4]);
 else
     fig1 = figure('Position', [3000,350,1450,450]);
 end
@@ -240,7 +240,7 @@ exportgraphics(fig1, sprintf('%s/fig3_varx_full_none_example_%s_%s.png', ...
 %% Difference of significant connections and R values over all paitents
 
 if poster_size 
-    figure('Units', 'inches', 'Position', [1,1,8.5,5]);
+    figure('Units', 'inches', 'Position', [1,1,7.5,4.65]);
 else
     figure('Position', [400,300,725,450])
 end
@@ -265,7 +265,7 @@ ylim([-ylim_abs, ylim_abs])
 set(gca, 'YAxisLocation', 'right')
 ylabel(['\DeltaRatio' newline '(Input - No Input)'])
 
-title(['Significant' newline 'Connections'])
+title('Sig. Connections')
 
 ax = ancestor(gca, 'axes');
 ax.YAxis.Exponent = 0;
@@ -292,7 +292,7 @@ ylim([-ylim_abs, ylim_abs])
 set(gca, 'YAxisLocation', 'right')
 ylabel(['Mean \DeltaR' newline '(Input - No Input)'])
 
-title(['Effect' newline 'size'])
+title('Effect size')
 
 fontsize(gcf, fig_font, 'points')
 
@@ -301,10 +301,7 @@ exportgraphics(gcf, sprintf('%s/fig3_varx_full_none_sig_ch_diff_R_%s_sig_ch_%d.p
 
 %% Features
 if poster_size 
-    figure('Units', 'inches', 'Position', [1,1,7.5,5]);
-    feature_combos = cellfun(@(C) strrep(C, 'and', '&'), feature_combos, 'UniformOutput', false);
-    feature_combos = cellfun(@(C) strrep(C, 'Fixations', 'Fix.'), feature_combos, 'UniformOutput', false);
-    feature_combos = cellfun(@(C) strrep(C, 'Fixation', 'Fix.'), feature_combos, 'UniformOutput', false);
+    figure('Units', 'inches', 'Position', [1,1,6.2,4.65]);
 else
     figure('Position', [725,700,700,525])
 end
@@ -318,13 +315,11 @@ plot(flipud(ci(:,2)), 'k*-')
 xticklabels(fliplr(feature_combos))
 xtickangle(45)
 
-xlim([0.5, length(ci)+0.5])
-
 ylabel('Mean \DeltaR')
 title('Input - No Input')
 grid('on')
 
-fontsize(gcf, fig_font, 'points')
+fontsize(18, 'points')
 
 exportgraphics(gcf, sprintf('%s/fig3_R_features_%s_sig_ch_%d.png', ...
     fig_dir, signal_type, select_sig), 'Resolution', 600)
