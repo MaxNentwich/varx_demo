@@ -10,7 +10,7 @@ sample_data_dir = '/media/max/Workspace/Data/varx_data';
 addpath(genpath('../src'))
 
 % models
-model_dir = '../results/models_';
+model_dir = '../results/models_na3';
 if exist(model_dir, 'dir') == 0
     mkdir(model_dir)
 end
@@ -23,7 +23,7 @@ compute_models = true;
 
 % Model parameters
 tl=0.6; % length of the mTRF model filter in seconds
-ta=0.1; % length of the VARX model filters in seconds
+ta=0.05; % length of the VARX model filters in seconds
 ta_hfa=0.05;
 tb=0.6; % length of the FIR model filter in seconds
 gamma = 0.3; 

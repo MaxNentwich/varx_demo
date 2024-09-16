@@ -2,7 +2,7 @@
 
 %% Define patients
 example_pat = 'NS127_02';
-signal_type = 'LFP';
+signal_type = 'HFA';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient;
@@ -17,8 +17,14 @@ load('../data/movie_subs_table.mat', 'movie_subs_table');
 
 addpath('../src')
 
+% Choose annotation ['myelin', 'timescale', 'gradient_1', 'gradient_2']
+annot_name = 'gradient_2';
+
+% Normalize asymetry by areas
+norm_areas = true;
+
 % Poster settings
-poster_size = true;
+poster_size = false;
 
 if poster_size
     fig_font = 26;
@@ -61,7 +67,21 @@ for pat = 1:length(patients)
     [loc{pat}, ~, ~] = localize_elecs_bipolar(labels_coord, 'dk');
     loc{pat} = loc{pat}';
 
-    direction_contact{pat} = mean(varx_R_asym{pat});
+    % Normalize number of electrodes
+    if norm_areas
+
+        locs_unique = unique(loc{pat});
+        varx_R_asym_norm = zeros(length(locs_unique), size(varx_R_asym{pat},2));
+    
+        for l = 1:length(locs_unique)
+            varx_R_asym_norm(l,:) = mean(varx_R_asym{pat}(ismember(loc{pat}, locs_unique{l}), :));
+        end
+
+        direction_contact{pat} = mean(varx_R_asym_norm);
+
+    else
+        direction_contact{pat} = mean(varx_R_asym{pat});
+    end
 
 end
 
@@ -91,19 +111,19 @@ areas = areas(idx_sort);
 median_area = median_area(idx_sort);
 
 %% Correlate with myelination (cortical hierarchy)
-myelin = readtable('../data/myelin_lh_parcels_aparc.xlsx');
+annot_data = readtable(sprintf('../data/%s_lh_parcels_aparc.xlsx', annot_name));
 
-myelin_areas = table2array(myelin(:,2));
-myelin_vals = table2array(myelin(:,3));
+map_areas = table2array(annot_data(:,2));
+map_vals = table2array(annot_data(:,3));
 
-myelin_areas = cellfun(@(C) strrep(C, 'b''', ''), myelin_areas, 'UniformOutput', false);
-myelin_areas = cellfun(@(C) strrep(C, '''', ''), myelin_areas, 'UniformOutput', false);
+map_areas = cellfun(@(C) strrep(C, 'b''', ''), map_areas, 'UniformOutput', false);
+map_areas = cellfun(@(C) strrep(C, '''', ''), map_areas, 'UniformOutput', false);
 
-idx_areas = cellfun(@(C) find(ismember(areas, C)), myelin_areas, 'UniformOutput', false);
+idx_areas = cellfun(@(C) find(ismember(areas, C)), map_areas, 'UniformOutput', false);
 
 idx_empty = cellfun(@(C) isempty(C), idx_areas);
-myelin_areas = myelin_areas(~idx_empty);
-myelin_vals = myelin_vals(~idx_empty);
+map_areas = map_areas(~idx_empty);
+map_vals = map_vals(~idx_empty);
 idx_areas = cell2mat(idx_areas(~idx_empty));
 
 areas = areas(idx_areas);
@@ -114,7 +134,7 @@ varx_dir = table(areas', median_area, 'VariableNames', {'parcel_name', 'varx_dir
 writetable(varx_dir, '../data/varx_dir_aparc.xlsx')
 
 %% Plot
-X = [ones(length(myelin_vals),1) myelin_vals];
+X = [ones(length(map_vals),1) map_vals];
 b = X\median_area;
 median_area_h = X*b;
 
@@ -125,8 +145,8 @@ else
 end
 
 hold on 
-scatter(myelin_vals, median_area, 'filled')
-plot(myelin_vals,median_area_h,'k')
+scatter(map_vals, median_area, 'filled')
+plot(map_vals,median_area_h,'k')
 
 xlabel('T1w/T2w ratio')
 ylabel('Mean R-R^T')
@@ -134,9 +154,9 @@ grid on
 fontsize(gcf, fig_font, 'points')
 set(gca, 'XDir', 'reverse')
 
-exportgraphics(gcf, sprintf('%s/fig7_direction_vs_t1wt2w_%s.png', fig_dir, signal_type), 'Resolution', 300)
+exportgraphics(gcf, sprintf('%s/fig7_direction_vs_%s_%s.png', fig_dir, annot_name, signal_type), 'Resolution', 300)
 
-[r_area, p_area] = corr(myelin_vals, median_area);
+[r_area, p_area] = corr(map_vals, median_area);
 
 fprintf('r=%1.3f, p=%1.3f\n', r_area, p_area)
 
@@ -151,8 +171,8 @@ asym_max = max(abs(varx_asym_ex(:)));
 loc_ex = loc{id_ex};
 
 % Sort areas by hierachy
-[~, idx_myelin] = sort(myelin_vals, 'descend');
-areas_sort = myelin_areas(idx_myelin);
+[~, idx_myelin] = sort(map_vals, 'descend');
+areas_sort = map_areas(idx_myelin);
 
 idx_sort_roi = cellfun(@(C) find(ismember(areas_sort, C)), loc_ex, 'UniformOutput', false);
 idx_empty = cellfun(@(C) isempty(C), idx_sort_roi);

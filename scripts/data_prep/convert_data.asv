@@ -1,10 +1,14 @@
-%% Convert data to sample format
+%% Reorganize data and select data relevant for this analysis
 
+% Source directories
 data_dir = '/media/DATA/ECoGData/Tobii/Patients';
-sample_dir = '/media/max/Workspace/Data/movies_legacy_sample';
 saccade_dir = '/media/DATA/ieeg_plot/Data/saccade_data';
 
-patient_list = readtable('./data/varx_patient_list.xlsx');
+% Output directory
+sample_dir = '/media/max/Workspace/Data/movies_legacy_sample';
+
+% List of patients 
+patient_list = readtable('../../data/varx_patient_list.xlsx');
 patients = patient_list.Patient;
 
 for i = 1:length(patients)

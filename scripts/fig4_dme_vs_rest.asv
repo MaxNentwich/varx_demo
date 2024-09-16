@@ -74,15 +74,15 @@ for pat = 1:length(patients)
     varX_Rvalue_rest{pat} = abs(sqrt(1-exp(-m_varx_mov{idx_rest}.A_Deviance/m_varx_mov{idx_rest}.T)));  
 
     %% Difference of significant connections
-    varX_pvalue_dme{pat} = m_varx_mov{idx_dme_5}.A_pval;
-    varX_pvalue_rest{pat} = m_varx_mov{idx_rest}.A_pval;
+    varX_pvalue_dme = m_varx_mov{idx_dme_5}.A_pval;
+    varX_pvalue_rest = m_varx_mov{idx_rest}.A_pval;
 
     if sig_channels
 
-        idx_sig = varX_pvalue_dme{pat} < p_thresh & varX_pvalue_rest{pat} < p_thresh;
+        idx_sig = varX_pvalue_dme < p_thresh & varX_pvalue_rest < p_thresh;
         idx_sig = idx_sig - (eye(size(idx_sig)) .* diag(idx_sig));
 
-        idx_sig_shift = varX_pvalue_dme{pat} < p_thresh & m_varx_mov{idx_dme_shift}.A_pval < p_thresh;
+        idx_sig_shift = varX_pvalue_dme < p_thresh & m_varx_mov{idx_dme_shift}.A_pval < p_thresh;
         idx_sig_shift = idx_sig_shift - (eye(size(idx_sig_shift)) .* diag(idx_sig_shift));
 
     else
@@ -106,11 +106,11 @@ for pat = 1:length(patients)
     varx_diff_dme_mean(pat) = mean(varx_R_diff_dme_vec);
 
     %% Significant connetions
-    n_ch = size(varX_pvalue_dme{pat},1);
+    n_ch = size(varX_pvalue_dme,1);
     n_conn = n_ch^2 - n_ch;
 
-    n_sig_dme5 = (sum(varX_pvalue_dme{pat}(:) < p_thresh) - n_ch) / n_conn;
-    n_sig_rest = (sum(varX_pvalue_rest{pat}(:) < p_thresh) - n_ch) / n_conn;
+    n_sig_dme5 = (sum(varX_pvalue_dme(:) < p_thresh) - n_ch) / n_conn;
+    n_sig_rest = (sum(varX_pvalue_rest(:) < p_thresh) - n_ch) / n_conn;
 
     n_sig_diff(pat) = n_sig_dme5 - n_sig_rest;
 
@@ -158,12 +158,9 @@ idx_example = ismember(patients, example_pat);
 varX_Rvalue_rest = varX_Rvalue_rest{idx_example};
 varX_Rvalue_dme = varX_Rvalue_dme{idx_example};
 
-varX_pvalue_rest = varX_pvalue_rest{idx_example};
-varX_pvalue_dme = varX_pvalue_dme{idx_example};
-
 coords = coords{idx_example};
 save(sprintf('%s/fig4_matrices_rest_movie_coords.mat', coord_dir), ...
-    'varX_Rvalue_rest', 'varX_Rvalue_dme', 'varX_pvalue_rest', 'varX_pvalue_dme', 'coords')
+    'varX_Rvalue_rest', 'varX_Rvalue_dme', 'coords')
 
 %% Plot an example
 plot_max = max([max(varX_Rvalue_dme(:)), max(varX_Rvalue_rest(:))]);

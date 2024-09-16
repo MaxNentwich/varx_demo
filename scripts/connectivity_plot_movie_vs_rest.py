@@ -11,27 +11,43 @@ from scipy.io import loadmat
 from nilearn import plotting
 import matplotlib.pyplot as plt
 
+p_thresh = 0.001
+
 data = loadmat('../results/spatial_plots/fig4_matrices_rest_movie_coords.mat')
 
 varx_R_rest = data['varX_Rvalue_rest']
 varx_R_rest = varx_R_rest - (np.eye(varx_R_rest.shape[0]) * np.diag(varx_R_rest))
 varx_R_movie = data['varX_Rvalue_dme']
 varx_R_movie = varx_R_movie - (np.eye(varx_R_movie.shape[0]) * np.diag(varx_R_movie))
+
+varx_p_rest = data['varX_pvalue_rest']
+varx_p_rest = varx_p_rest - (np.eye(varx_p_rest.shape[0]) * np.diag(varx_p_rest))
+varx_p_movie = data['varX_pvalue_dme']
+varx_p_movie = varx_p_movie - (np.eye(varx_p_movie.shape[0]) * np.diag(varx_p_movie))
+
 coordinates = data['coords']
 
 # Symmetric version
 varx_R_rest = np.triu(varx_R_rest) + np.triu(varx_R_rest).T
 varx_R_movie = np.triu(varx_R_movie) + np.triu(varx_R_movie).T
 
-plt.rcParams.update({'font.size': 26})
+varx_p_rest = np.triu(varx_p_rest) + np.triu(varx_p_rest).T
+varx_p_movie = np.triu(varx_p_movie) + np.triu(varx_p_movie).T
+
+idx_sig = np.logical_and(varx_p_rest < p_thresh, varx_p_movie < p_thresh)
+
+varx_R_rest[np.invert(idx_sig)] = np.nan
+varx_R_movie[np.invert(idx_sig)] = np.nan
+
+plt.rcParams.update({'font.size': 18})
 
 #%% Rest
 plotting.plot_connectome(
     varx_R_rest,
     coordinates,
-    edge_threshold=0.05,
+    edge_threshold=0,
     edge_vmin=0, 
-    edge_vmax=0.35,
+    edge_vmax=0.08,
     node_size=20,
     edge_cmap='Reds',
     edge_kwargs={'linewidth':2},
@@ -48,9 +64,9 @@ plt.savefig('../results/figures/fig4_rest_connectome_plot_R_LFP.png', dpi=300)
 plotting.plot_connectome(
     varx_R_movie,
     coordinates,
-    edge_threshold=0.05,
+    edge_threshold=0,
     edge_vmin=0, 
-    edge_vmax=0.35,
+    edge_vmax=0.08,
     node_size=20,
     edge_cmap='Reds',
     edge_kwargs={'linewidth':2},
@@ -67,9 +83,9 @@ plt.savefig('../results/figures/fig4_movie_connectome_plot_R_LFP.png', dpi=300)
 plotting.plot_connectome(
     varx_R_movie - varx_R_rest,
     coordinates,
-    edge_threshold=0.05,
+    edge_threshold=0,
     edge_vmin=0, 
-    edge_vmax=0.35,
+    edge_vmax=0.08,
     node_size=20,
     edge_cmap='Reds',
     edge_kwargs={'linewidth':2},

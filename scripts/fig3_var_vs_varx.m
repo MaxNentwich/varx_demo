@@ -19,6 +19,9 @@ p_thresh = 0.0001;
 
 select_sig = false;
 
+% Plot p-values ('pval') or R-values ('rval') for example
+example_val = 'pval';
+
 % Poster settings
 poster_size = true;
 
@@ -31,6 +34,8 @@ end
 % Initialize array to collect data
 model_var = cell(1, length(patients));
 model_varx = cell(1, length(patients));
+var_Rvalue = cell(1, length(patients));
+varx_Rvalue = cell(1, length(patients));
 n_sig_var = nan(1, length(patients));
 n_sig_varx = nan(1, length(patients));
 r_diff_mean = nan(1, length(patients));
@@ -64,25 +69,25 @@ for pat = 1:length(patients)
     n_sig_varx(pat) = (sum(model_varx{pat}.A_pval(:) < p_thresh) - n_ch) / n_conn;
 
     %% Effect size
-    var_Rvalue = sqrt(1-exp(-model_var{pat}.A_Deviance/model_var{pat}.T));
-    varx_Rvalue = sqrt(1-exp(-model_varx{pat}.A_Deviance/model_varx{pat}.T));
+    var_Rvalue{pat} = sqrt(1-exp(-model_var{pat}.A_Deviance/model_var{pat}.T));
+    varx_Rvalue{pat} = sqrt(1-exp(-model_varx{pat}.A_Deviance/model_varx{pat}.T));
 
     % R values of significant connections
     if select_sig
         idx_sig = (model_var{pat}.A_pval < p_thresh) & (model_varx{pat}.A_pval < p_thresh);
         idx_sig = idx_sig - eye(size(idx_sig));
     else
-        idx_sig = eye(size(var_Rvalue)) == 0;
+        idx_sig = eye(size(var_Rvalue{pat})) == 0;
     end
 
-    r_diff_mean(pat) = mean(varx_Rvalue(idx_sig==1) - var_Rvalue(idx_sig==1));
+    r_diff_mean(pat) = mean(varx_Rvalue{pat}(idx_sig==1) - var_Rvalue{pat}(idx_sig==1));
 
     %% Coordinates
 
     %% Compute R values for models with different features
     if length(feature_combos) == 0, continue, end
 
-    R_varx_feat = NaN(size(varx_Rvalue,1), size(varx_Rvalue,2), length(feature_combos));
+    R_varx_feat = NaN(size(varx_Rvalue{pat},1), size(varx_Rvalue{pat},2), length(feature_combos));
     for feat = 1:length(feature_combos)
         R_varx_feat(:,:,feat) = abs(sqrt(1-exp(-m_varx_features{feat}.A_Deviance/m_varx_features{feat}.T)));  
     end
@@ -92,7 +97,7 @@ for pat = 1:length(patients)
         idx_sig_varx = m_varx.A_pval < p_thresh;
         idx_sig_varx = idx_sig_varx - (eye(size(idx_sig_varx)) .* diag(idx_sig_varx));
     
-        idx_sig_feat = NaN(size(varx_Rvalue,1), size(varx_Rvalue,2), length(feature_combos));
+        idx_sig_feat = NaN(size(varx_Rvalue{pat},1), size(varx_Rvalue{pat},2), length(feature_combos));
         for feat = 1:length(feature_combos)
             idx_sig_feat(:,:,feat) = m_varx_features{feat}.A_pval < p_thresh;
             idx_sig_feat(:,:,feat) = idx_sig_feat(:,:,feat) - (eye(size(idx_sig_feat(:,:,feat))) .* diag(idx_sig_feat(:,:,feat)));
@@ -101,14 +106,14 @@ for pat = 1:length(patients)
         idx_sig_feat = (sum(idx_sig_feat,3) == length(feature_combos)) & idx_sig_varx;
 
     else
-        idx_sig_feat = eye(size(varx_Rvalue)) == 0;
+        idx_sig_feat = eye(size(varx_Rvalue{pat})) == 0;
     end
 
     idx_none = ismember(feature_combos, 'None');
     R_varx_none = R_varx_feat(:,:,idx_none);
     
     R_varx_feat(:,:,idx_none) = [];
-    R_varx_feat = cat(3, varx_Rvalue, R_varx_feat);
+    R_varx_feat = cat(3, varx_Rvalue{pat}, R_varx_feat);
 
     feature_combos(idx_none) = [];
     C =  {{'Fixation, Cuts and Sound'}, feature_combos};
@@ -179,11 +184,25 @@ fprintf('All vs fixations: t(%d)=%1.2f, p=%1.5f\n', ...
 %% Plot an example
 idx_example = ismember(patients, example_pat);
 
-plot_range_ar = [min(log10(model_var{idx_example}.A_pval(:))), max(log10(model_var{idx_example}.A_pval(:)))];
-plot_range = [min(log10(model_varx{idx_example}.A_pval(:))), max(log10(model_varx{idx_example}.A_pval(:)))];
+if strcmp(example_val, 'pval')
+    mat_var = log10(model_var{idx_example}.A_pval);
+    mat_varx = log10(model_varx{idx_example}.A_pval);
+    cmap = 'summer';
+elseif strcmp(example_val, 'rval')
+    mat_var = log(var_Rvalue{idx_example});
+    mat_varx = log(varx_Rvalue{idx_example});
+    cmap = 'Reds';
+end
+
+plot_range_ar = [min(mat_var(:)), max(mat_var(:))];
+plot_range = [min(mat_varx(:)), max(mat_varx(:))];
 plot_range = min([plot_range_ar; plot_range]);
 
-plot_diff = max(abs(log10(model_var{idx_example}.A_pval(:)) - log10(model_varx{idx_example}.A_pval(:))));
+if strcmp(example_val, 'rval')
+    plot_range(2) = -3;
+end
+
+plot_diff = max(abs(mat_var(:) - mat_varx(:)));
 plot_range_diff = [-plot_diff, plot_diff];
 
 if poster_size 
@@ -196,22 +215,22 @@ t = tiledlayout(1,3);
 
 ax1 = nexttile;
 
-imagesc(log10(model_varx{idx_example}.A_pval))
+imagesc(mat_varx)
 
 clim(ax1, plot_range)
 axis square
-colormap(ax1, slanCM('summer'))
+colormap(ax1, slanCM(cmap))
 xlabel('Channels')
 ylabel('Channels')
 title('Inputs')
 
 ax2 = nexttile;
 
-imagesc(log10(model_var{idx_example}.A_pval))
+imagesc(mat_var)
 
 clim(ax2, plot_range)
 axis square
-colormap(ax2, slanCM('summer'))
+colormap(ax2, slanCM(cmap))
 cb = colorbar(); 
 ylabel(cb,'log p-value','Rotation',90)
 xlabel('Channels')
@@ -220,7 +239,7 @@ title('No Inputs')
 
 ax3 = nexttile;
 
-imagesc(log10(model_varx{idx_example}.A_pval) - log10(model_var{idx_example}.A_pval))
+imagesc(mat_varx - mat_var)
 
 clim(ax3, 0.05*plot_range_diff)
 
