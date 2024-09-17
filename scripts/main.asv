@@ -337,12 +337,12 @@ for pat = 1:length(patients)
             vids_indiv{end+1} = 'Inscapes_5min';
 
             % Second half
-            Y_insc_end = Y{idx_vid}(end-fs*300:end-1, :);
-            HFA_insc_end = HFA{idx_vid}(end-fs*300:end-1, :);
-            X_insc_end = X{idx_vid}(end-fs*300:end-1, :);
+            Y_dme5_end = Y{idx_vid}(end-fs*300:end-1, :);
+            HFA_vid_end = HFA{idx_vid}(end-fs*300:end-1, :);
+            X_dme5_end = X{idx_vid}(end-fs*300:end-1, :);
 
-            m_varx_mov{end+1} = varx(Y_insc_end,na,X_insc_end,nb,gamma);
-            m_varx_mov_hfa{end+1} = varx(HFA_insc_end,na_hfa,X_insc_end,nb,gamma);
+            m_varx_mov{end+1} = varx(Y_dme5_end,na,X_dme5_end,nb,gamma);
+            m_varx_mov_hfa{end+1} = varx(HFA_vid_end,na_hfa,X_dme5_end,nb,gamma);
             vids_indiv{end+1} = 'Inscapes_last_5min';
 
         end
