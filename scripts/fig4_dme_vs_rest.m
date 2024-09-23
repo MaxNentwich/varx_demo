@@ -17,6 +17,9 @@ example_pat = 'NS127_02';
 
 signal_type = 'LFP';
 
+% Movie segment ['Despicable_Me_English_5min', 'Despicable_Me_English_last_5min', 'Inscapes_5min', 'Inscapes_last_5min']
+movie_select = 'Inscapes_last_5min';
+
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient(table2array(sum(patient_list(:,2:end),2) == 2));
 
@@ -62,7 +65,7 @@ for pat = 1:length(patients)
     end
 
     % Find the 5 minute version of Despicable Me and Resting state data
-    idx_dme_5 = ismember(vid_recs, 'Despicable_Me_English_5min');
+    idx_dme_5 = ismember(vid_recs, movie_select);
     idx_dme_shift = ismember(vid_recs, 'Despicable_Me_English_5min_shift');
     idx_rest = ismember(vid_recs, 'Resting_fixation');
 
@@ -284,8 +287,8 @@ title(['Effect' newline 'Size'])
 
 fontsize(gcf, fig_font, 'points')
 
-exportgraphics(gcf, sprintf('%s/fig4_connectivity_dme_rest_summary_%s.png', ...
-    fig_dir, signal_type), 'Resolution', 600)
+exportgraphics(gcf, sprintf('%s/fig4_connectivity_dme_rest_summary_%s_%s.png', ...
+    fig_dir, signal_type, movie_select), 'Resolution', 600)
 
 %% Positive control showing movie data does differ when more features are included
 figure('Position', [400,300,350,450])

@@ -24,20 +24,12 @@ for i = 1:length(na)
 
     if strcmp(signal_type, 'LFP')
 
-        if strcmp(na{i}, '6')
-            load(sprintf('%s/models/%s_varx_models.mat', data_dir, pat), 'm_varx')
-        else
-            load(sprintf('%s/models_na%s/%s_varx_models.mat', data_dir, na{i}, pat), 'm_varx')
-        end
+        load(sprintf('%s/models_na%s/%s_varx_models.mat', data_dir, na{i}, pat), 'm_varx')
         mvarx_na{i} = m_varx;
 
     elseif strcmp(signal_type, 'HFA')
 
-        if strcmp(na{i}, '6')
-            load(sprintf('%s/models/%s_varx_models.mat', data_dir, pat), 'm_varx_hfa')
-        else
-            load(sprintf('%s/models_na%s/%s_varx_models.mat', data_dir, na{i}, pat), 'm_varx_hfa')
-        end
+        load(sprintf('%s/models_na%s/%s_varx_models.mat', data_dir, na{i}, pat), 'm_varx_hfa')
         mvarx_na{i} = m_varx_hfa;
 
     end

@@ -10,7 +10,7 @@ sample_data_dir = '/media/max/Workspace/Data/varx_data';
 addpath(genpath('../src'))
 
 % models
-model_dir = '../results/models';
+model_dir = '../results/models_consistent';
 if exist(model_dir, 'dir') == 0
     mkdir(model_dir)
 end
@@ -23,7 +23,7 @@ compute_models = true;
 
 % Model parameters
 tl=0.6; % length of the mTRF model filter in seconds
-ta=0.1; % length of the VARX model filters in seconds
+ta=0.05; % length of the VARX model filters in seconds
 ta_hfa=0.05;
 tb=0.6; % length of the FIR model filter in seconds
 gamma = 0.3; 
@@ -100,70 +100,69 @@ for pat = 1:length(patients)
             lfp = lfp(1:length(x), :);
             hfa = hfa(1:length(x), :);
         end
+
+        time = (0:length(x)-1) / fs_neural;
     
         %% Load film cuts
-        if ~strcmp(vid_name_legacy, 'Inscapes') && ~strcmp(vid_name_legacy, 'Resting_fixation') 
-    
-            time = (0:length(x)-1) / fs_neural;
-            n_samples = length(time);
-        
-            vid_name_legacy = strrep(vid_name_legacy, '_Rep_1', '');
-            vid_name_legacy = strrep(vid_name_legacy, '_Rep_2', '');
-        
-            load(sprintf('%s/%s/matlab_data/Eyetracking/%s', et_dir, patients(pat).name, video), 'eye')      
-            scene_table = readtable(sprintf('%s/%s_scenes.xlsx', cut_dir, vid_name_legacy));
-            
-            if strfind(vid_name_legacy, 'Monkey') == 1
-                scene_frame = scene_table.Frame * 2;
-                scene_frame = scene_frame(scene_frame < length(eye.frame_time));
-            else
-                scene_frame = scene_table.Frame;
-            end
-    
-            scenes_time = eye.frame_time(scene_frame);
-            scenes_samp = round(interp1(time-time(1), 1:n_samples, scenes_time));
-    
-            scenes_vec = zeros(1, n_samples);
-            scenes_vec(scenes_samp) = 1;
-        
-            x = [x, scenes_vec'];
-    
+        if strcmp(vid_name_legacy, 'Inscapes') || strcmp(vid_name_legacy, 'Resting_fixation') 
+            vid_name_scenes = 'Despicable_Me_English';
+            vid_name_eye = 'Despicable_Me_English.mat';
         else
-            if size(x,2) > size(x,1)
-                x = x';
-            end
-            x = [x, randn(length(x),1)];
+            vid_name_scenes = strrep(vid_name_legacy, '_Rep_1', '');
+            vid_name_scenes = strrep(vid_name_scenes, '_Rep_2', '');
+            vid_name_eye = video;
         end
+   
+        n_samples = length(time);
+    
+        load(sprintf('%s/%s/matlab_data/Eyetracking/%s', et_dir, patients(pat).name, vid_name_eye), 'eye')      
+        scene_table = readtable(sprintf('%s/%s_scenes.xlsx', cut_dir, vid_name_scenes));
+        
+        if strfind(vid_name_scenes, 'Monkey') == 1
+            scene_frame = scene_table.Frame * 2;
+            scene_frame = scene_frame(scene_frame < length(eye.frame_time));
+        else
+            scene_frame = scene_table.Frame;
+        end
+
+        scenes_time = eye.frame_time(scene_frame);
+        scenes_samp = round(interp1(time-time(1), 1:n_samples, scenes_time));
+
+        scenes_samp(isnan(scenes_samp)) = [];
+        
+        scenes_vec = zeros(1, n_samples);
+        scenes_vec(scenes_samp) = 1;
+    
+        x = [x, scenes_vec'];
     
         clearvars eye
     
         %% Load audio
         speech_vid = sprintf('%s/%s.mat', speech_dir, vid_name_legacy);
     
-        if exist(speech_vid, 'file') ~= 0
-    
-            load(sprintf('%s/%s.mat', speech_dir, vid_name_legacy), 'audio', 'fs')
-            time_audio = (0:size(audio, 1)-1) / fs;
-    
-            audio_env = abs(hilbert(audio));
-    
-            audio_env = audio_env(time_audio < time(end));
-            time_audio = time_audio(time_audio < time(end));
-    
-            audio_ds = resample(audio_env, fs_neural, fs);
-    
-            if length(audio_ds) < length(x)
-                audio_ds = [audio_ds, zeros(1, length(x) - length(audio_ds))];
-            elseif length(audio_ds) > length(x)
-                audio_ds = audio_ds(1:length(audio_ds)-length(x));
-            end
-            
-            x = [x, audio_ds'];
-    
-        else
-            x = [x, randn(length(x),1)]; 
+        if exist(speech_vid, 'file') == 0
+            speech_vid = sprintf('%s/Despicable_Me_English.mat', speech_dir);
         end
+    
+        load(speech_vid, 'audio', 'fs')
+        time_audio = (0:size(audio, 1)-1) / fs;
 
+        audio_env = abs(hilbert(audio));
+
+        audio_env = audio_env(time_audio < time(end));
+        time_audio = time_audio(time_audio < time(end));
+
+        audio_ds = resample(audio_env, fs_neural, fs);
+
+        if length(audio_ds) < length(x)
+            audio_ds = [audio_ds, zeros(1, length(x) - length(audio_ds))];
+        elseif length(audio_ds) > length(x)
+            audio_ds = audio_ds(1:length(audio_ds)-length(x));
+        end
+        
+        x = [x, audio_ds'];
+    
+        %%
         % subtract mean to avoid dealing with it in the regression
         x = x-mean(x); y=y-mean(y); hfa = hfa-mean(hfa);
     
