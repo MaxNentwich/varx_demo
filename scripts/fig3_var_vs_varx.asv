@@ -3,7 +3,7 @@
 %% Define patients
 example_pat = 'NS127_02';
 
-signal_type = 'HFA';
+signal_type = 'LFP';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient;
@@ -137,7 +137,7 @@ p_rval = signrank(real(r_diff_mean));
 
 fprintf('Ratio of significant channels: median=%1.1e p=%1.5f, N=%d\n', ...
     median(n_sig_diff), p_chans, length(n_sig_diff))
-fprintf('Effect size: median=%1.1e p=%1.5f, N=%d\n', ...
+fprintf('Ratio of significant channels: median=%1.1e p=%1.5f, N=%d\n', ...
     median(real(r_diff_mean)), p_rval, length(r_diff_mean))
 
 % Models with different features

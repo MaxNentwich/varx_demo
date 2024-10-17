@@ -34,7 +34,7 @@ axis square
 
 h(2)=subplot(1,4,2);
 R = model.A_Rvalue-diag(diag(model.A_Rvalue));
-imagesc(R);  title('VARX Estimate R'); 
+imagesc(R);  title('VARX estimate R'); 
 xlabel('Brain areas'); 
 colormap('hot')
 axis square
@@ -44,17 +44,17 @@ plot(sqrt(Cmat(:)),R(:),'.');
 if poster_size
     xlabel('True'); ylabel('VARX')
 else
-     xlabel('True C'); ylabel('Model R')
+     xlabel('True connectivity'); ylabel('VARX estimate R')
 end
 
-title('Validation')
+title(['Model' newline 'connectivity'])
 axis square
 
 h(4)=subplot(1,4,4); 
 lambda = 0.01;
 SC = graphicalLasso(cov(y), lambda,200); 
 SC = abs(SC - diag(diag(SC))); % structural connectivity
-imagesc(SC); title('Sparse Inverse FC')
+imagesc(SC); title(['Inverse' newline 'covariance'])
 xlabel('Brain areas'); ylabel('Brain areas')
 colormap('hot')
 axis square

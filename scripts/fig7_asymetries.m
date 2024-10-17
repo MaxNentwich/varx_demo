@@ -2,12 +2,12 @@
 
 %% Define patients
 example_pat = 'NS127_02';
-signal_type = 'HFA';
+signal_type = 'LFP';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient;
 
-fig_font = 16;
+fig_font = 20;
 
 c_scale = 0.4;
 
@@ -18,10 +18,10 @@ load('../data/movie_subs_table.mat', 'movie_subs_table');
 addpath('../src')
 
 % Choose annotation ['myelin', 'timescale', 'gradient_1', 'gradient_2']
-annot_name = 'gradient_2';
+annot_name = 'myelin';
 
 % Normalize asymetry by areas
-norm_areas = true;
+norm_areas = false;
 
 % Poster settings
 poster_size = false;
@@ -146,10 +146,11 @@ end
 
 hold on 
 scatter(map_vals, median_area, 'filled')
-plot(map_vals,median_area_h,'k')
+plot(map_vals, median_area_h, 'k')
 
 xlabel('T1w/T2w ratio')
 ylabel('Mean R-R^T')
+xlim([min(map_vals)-0.01, max(map_vals)+0.01])
 grid on
 fontsize(gcf, fig_font, 'points')
 set(gca, 'XDir', 'reverse')
@@ -193,7 +194,7 @@ bnd = find(diff(idx_sort_roi(idx_sort)) ~= 0);
 if poster_size 
     figure('Units', 'inches', 'Position', [1,1,7,4])
 else
-    figure()
+    figure('Position', [350,250,625,420])
 end
 
 imagesc(varx_asym_ex)
@@ -215,7 +216,7 @@ xticks([])
 yticks([])
 cb = colorbar(); 
 ylabel(cb,'R - R^T' ,'Rotation',270)
-
+axis tight
 fontsize(gcf, fig_font, 'points')
 
 exportgraphics(gcf, sprintf('%s/fig7_example_connectivity_%s.png', fig_dir, signal_type), 'Resolution', 300)

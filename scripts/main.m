@@ -10,7 +10,7 @@ sample_data_dir = '/media/max/Workspace/Data/varx_data';
 addpath(genpath('../src'))
 
 % models
-model_dir = '../results/models_consistent';
+model_dir = '../results/models';
 if exist(model_dir, 'dir') == 0
     mkdir(model_dir)
 end
@@ -23,8 +23,8 @@ compute_models = true;
 
 % Model parameters
 tl=0.6; % length of the mTRF model filter in seconds
-ta=0.05; % length of the VARX model filters in seconds
-ta_hfa=0.05;
+ta=0.1; % length of the VARX model filters in seconds
+ta_hfa=0.1;
 tb=0.6; % length of the FIR model filter in seconds
 gamma = 0.3; 
 
@@ -103,6 +103,8 @@ for pat = 1:length(patients)
 
         time = (0:length(x)-1) / fs_neural;
     
+        if size(x,2) > size(x,1), x = x'; end
+
         %% Load film cuts
         if strcmp(vid_name_legacy, 'Inscapes') || strcmp(vid_name_legacy, 'Resting_fixation') 
             vid_name_scenes = 'Despicable_Me_English';
@@ -129,11 +131,15 @@ for pat = 1:length(patients)
         scenes_samp = round(interp1(time-time(1), 1:n_samples, scenes_time));
 
         scenes_samp(isnan(scenes_samp)) = [];
-        
+
         scenes_vec = zeros(1, n_samples);
         scenes_vec(scenes_samp) = 1;
     
-        x = [x, scenes_vec'];
+        if size(scenes_vec,1) ~= size(x,1)
+            scenes_vec = scenes_vec';
+        end
+
+        x = [x, scenes_vec];
     
         clearvars eye
     
@@ -160,7 +166,11 @@ for pat = 1:length(patients)
             audio_ds = audio_ds(1:length(audio_ds)-length(x));
         end
         
-        x = [x, audio_ds'];
+        if size(audio_ds,1) ~= size(x,1)
+            audio_ds = audio_ds';
+        end
+
+        x = [x, audio_ds];
     
         %%
         % subtract mean to avoid dealing with it in the regression
@@ -343,6 +353,23 @@ for pat = 1:length(patients)
             m_varx_mov{end+1} = varx(Y_insc_end,na,X_insc_end,nb,gamma);
             m_varx_mov_hfa{end+1} = varx(HFA_insc_end,na_hfa,X_insc_end,nb,gamma);
             vids_indiv{end+1} = 'Inscapes_last_5min';
+
+        end
+
+        idx_monkey = cellfun(@(C) contains(C, 'Monkey'), vid_recs);
+
+        if sum(idx_monkey) ~= 0
+            
+            idx_vid = find(idx_monkey, 1, 'first');
+
+            Y_monkey = Y{idx_vid}(1:fs*300, :);
+            HFA_monkey = HFA{idx_vid}(1:fs*300, :);
+            X_monkey = X{idx_vid}(1:fs*300, :);
+        
+            m_varx_mov{end+1} = varx(Y_monkey,na,X_monkey,nb,gamma);
+            m_varx_mov_hfa{end+1} = varx(HFA_monkey,na_hfa,X_monkey,nb,gamma);
+            vids_indiv{end+1} = 'Monkey_5min';
+
 
         end
 

@@ -200,7 +200,7 @@ hfa = hfa./std(hfa);
 figure('Units', 'inches', 'Position', [7,6,5.5,2])
 plot(time(1:10*fs_neural), hfa(1:10*fs_neural,15), 'Color', 'k')
 xlabel('Time [s]')
-title('HFA')
+title('BHA')
 fontsize(gcf, fig_font, 'points')
 
 exportgraphics(gcf, sprintf('%s/fig3_addon_HFA.png', fig_dir), 'Resolution', 600)

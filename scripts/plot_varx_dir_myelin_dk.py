@@ -27,7 +27,7 @@ rh_annot_file = '../data/rh.aparc.annot'
 
 #%% Load myelination map
 myelin_data = pd.read_excel('../data/myelin_lh_parcels_aparc.xlsx')
-myelin_lh_parcels = myelin_data.t1wt2w.values
+myelin_lh_parcels = myelin_data.annot_val.values
 
 #%% Plot incoming vs outgoing connections
 fig_path = '../results/figures/fig7_%s.png'

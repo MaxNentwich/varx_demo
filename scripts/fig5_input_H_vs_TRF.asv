@@ -6,7 +6,7 @@ example_pat = 'NS127_02';
 signal_type = 'LFP';
 
 % Stimulus 3 -> audio; 1 -> fixations; 2 -> cuts
-idx_stim = 3;
+idx_stim = 1;
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient;
@@ -82,9 +82,8 @@ idx_example = ismember(patients, example_pat);
 labels_sig_example = labels_cat(cellfun(@(C) contains(C, example_pat), labels_cat));
 idx_sig_example = ismember(labels_all{idx_example}, labels_sig_example);
 
-% if strcmp(example_pat, 'NS127_02') && idx_stim == 1 && strcmp(signal_type, 'LFP')
-%     idx_sig_example(setdiff(1:length(idx_sig_example), [20:24, 87:92])) = 0;
-% end
+if example_pat 'NS127_02')
+idx_sig_example(setdiff(1:length(idx_sig_example), [20:24, 87:92])) = 0;
 
 % Audio envelope
 x_label_str = 'Delay [s]';
@@ -134,19 +133,11 @@ for p = 1:length(patients)
 end
 
 %% Stats
-B_pow_pat = B_pow_pat(~isnan(B_pow_pat));
-H_pow_pat = H_pow_pat(~isnan(H_pow_pat));
-B_len_pat = B_len_pat(~isnan(B_len_pat));
-H_len_pat = H_len_pat(~isnan(H_len_pat));
+[~, p_pow, ~, stat_pow] = ttest(B_pow_pat, H_pow_pat);
+[~, p_len, ~, stat_len] = ttest(B_len_pat, H_len_pat);
 
-p_pow = signrank(B_pow_pat, H_pow_pat);
-p_len = signrank(B_len_pat, H_len_pat);
-
-med_pow = median(B_pow_pat-H_pow_pat);
-med_len = median(B_len_pat-H_len_pat);
-
-fprintf('Power: median%c=%1.1e, p=%1.5f, N=%d\n', 916, med_pow, p_pow, length(B_pow_pat))
-fprintf('Length: median%c=%2.2fms, p=%1.5f, N=%d\n', 916, med_len, p_len, length(B_len_pat))
+fprintf('Power: t(%d)=%1.2f, p=%1.5f\n', stat_pow.df, stat_pow.tstat, p_pow)
+fprintf('length: t(%d)=%1.2f, p=%1.5f\n', stat_len.df, stat_len.tstat, p_len)
 
 %% Figures for difference of power and length of responses in each patient
 

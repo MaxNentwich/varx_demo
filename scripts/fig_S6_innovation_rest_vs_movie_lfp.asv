@@ -66,6 +66,9 @@ for subj = subject_order
         na = 4; nb=fs/2; lambda=0;
         model{i} = varx(y,na,x,nb,lambda);
 
+        x_sub{i} = x;
+        y_sub{i} = y;
+
     end
 
     % remember for each subject change in power for signal and noise
@@ -75,7 +78,7 @@ for subj = subject_order
 end
 
 for j = 1:length(model)
-    [~,e] = varx_simulate(model{j}.B,model{j}.A,x,y);
+    [~,e] = varx_simulate(model{j}.B,model{j}.A,x_sub{j},y_sub{j});
     [Pe{j},fbin]=pwelch(e,fs,[],[],fs);
 end
 
@@ -85,8 +88,8 @@ nexttile(1,[1 2]);
 imagesc(1:size(Py{1},2),fbin,db(abs(Py{1}))-db(abs(Py{2}))); h(1)=gca; pos=h(1).Position;
 x_lim = xlim;
 hold on
-plot(x_lim, [6,6], 'k--')
-plot(x_lim, [9,9], 'k--')
+plot(x_lim, [5,5], 'k--')
+plot(x_lim, [11,11], 'k--')
 
 colorbar('westoutside'); clim([-10 10]); axis xy; h(1).Position=pos;
 ylabel('Frequency (Hz)'); title('y^2 Power spectrum change');  

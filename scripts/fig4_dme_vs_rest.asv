@@ -18,7 +18,7 @@ example_pat = 'NS127_02';
 signal_type = 'LFP';
 
 % Movie segment ['Despicable_Me_English_5min', 'Despicable_Me_English_last_5min', 'Inscapes_5min', 'Inscapes_last_5min', 'Monkey_5min']
-movie_select = 'Monkey_5min';
+movie_select = 'Despicable_Me_English_5min';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient(table2array(sum(patient_list(:,2:end),2) == 2));
@@ -144,16 +144,25 @@ varx_diff_dme_mean(idx_empty) = [];
 n_sig_diff(idx_empty) = [];
 
 %% Compute differences and stats
+[~, p_n_sig, ~, stat_n_sig] = ttest(n_sig_diff);
+[~, p_effect_size, ~, stat_effect_size] = ttest(varx_diff_mean);
+[~, p_movie, ~, stat_movie] = ttest(varx_diff_dme_mean);
+
 p_n_sig = signrank(n_sig_diff);
 p_effect_size = signrank(varx_diff_mean);
 p_movie = signrank(varx_diff_dme_mean);
 
-fprintf('Ratio of significant channels: median=%1.1e, p=%1.2f, N=%d\n', ...
+fprintf('Ratio of significant channels: median=%1.4f, p=%1.2f, N=%d\n', ...
     median(n_sig_diff), p_n_sig, length(n_sig_diff))
-fprintf('Effect size: median=%1.1e, p=%1.2f, N=%d\n', ...
+fprintf('Effect size: median=%1.1e, p=%1.5f, N=%d\n', ...
     median(varx_diff_mean), p_effect_size, length(varx_diff_mean))
 fprintf('Movie features median=%1.1e, p=%1.5f, N=%d\n', ...
     median(varx_diff_dme_mean), p_movie, length(varx_diff_dme_mean))
+
+fprintf('Effect size: t(%d)=%1.2f, p=%1.5f\n', ...
+    stat_effect_size.df, stat_effect_size.tstat, p_effect_size)
+fprintf('Movie features: t(%d)=%1.2f, p=%1.5f\n', ...
+    stat_movie.df, stat_movie.tstat, p_movie)
 
 %% Save the data for a spatial plot
 idx_example = ismember(patients, example_pat);
