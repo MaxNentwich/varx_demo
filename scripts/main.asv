@@ -2,7 +2,7 @@
 
 %% Define paths and parameters
 data_dir = '/media/max/Workspace/Data/movies_legacy_sample/';
-et_dir = '/media/DATA/ECoGData/Tobii/Patients';
+et_dir = '/media/max/e61df479-8f57-4855-b852-04ccdfb12a6c/ECoGData/Tobii/Patients';
 cut_dir = '../data/scene_cuts_frames';
 speech_dir = '../data/speech_files';
 sample_data_dir = '/media/max/Workspace/Data/varx_data';
@@ -10,7 +10,7 @@ sample_data_dir = '/media/max/Workspace/Data/varx_data';
 addpath(genpath('../src'))
 
 % models
-model_dir = '../results/models';
+model_dir = '../results/models_extend';
 if exist(model_dir, 'dir') == 0
     mkdir(model_dir)
 end
@@ -28,8 +28,8 @@ ta_hfa=0.1;
 tb=0.6; % length of the FIR model filter in seconds
 gamma = 0.3; 
 
-stim_features = {'fixations'};
-str = {'fixations'};
+stim_features = {'saccades', 'fixations'};
+str = {'saccades', 'fixations'};
 
 videos = {...
     'Despicable_Me_English.mat', ...
@@ -45,6 +45,14 @@ videos = {...
 % List of videos for individual analysis
 vids_select = {'Despicable_Me_English', 'Resting_fixation'};
 
+% Saccade novelty
+saccade_features = readtable('../data/saccade_features_and_distance.csv', Delimiter=',');
+
+% Parts of filenames to find frame indices
+fr_str = 'fr_';
+file_str = '.jpg';
+
+%%
 patients = dir(data_dir);
 patients = patients(3:end);
 
@@ -76,11 +84,11 @@ for pat = 1:length(patients)
         vid_file = [data_dir patients(pat).name '/LFP/' video];
         if exist(vid_file, 'file') == 0, continue, end
     
-        label_dir = sprintf('/media/DATA/ECoGData/Tobii/Patients/%s/matlab_data/Envelope_phase/BHA', patients(pat).name);
+        label_dir = sprintf('%s/%s/matlab_data/Envelope_phase/BHA', et_dir, patients(pat).name);
     
         load([data_dir patients(pat).name '/LFP/' video],'lfp','fs');
         load([data_dir patients(pat).name '/BHA/' video],'envelope');
-        load([data_dir patients(pat).name '/Stimuli/' video], stim_features{:});
+        load([data_dir patients(pat).name '/Stimuli/' video], stim_features{:}, 'frame_saccade', 'frame_fixation', 'pupil');
         load(sprintf('%s/%s', label_dir, video), 'labels')
 
         if strcmp(patients(pat).name, 'NS155') && strcmp(video, 'Resting_fixation.mat')
@@ -89,6 +97,46 @@ for pat = 1:length(patients)
             envelope(:,idx_extra) = [];
             labels(idx_extra) = [];
         end
+
+        %% Load saccade novelty 
+        if ~strcmp(vid_name_legacy, 'Resting_fixation') 
+    
+            idx_pat = cellfun(@(C) contains(C, patients(pat).name), saccade_features.pre_saccade_file);
+            saccade_features_pat = saccade_features(idx_pat, :);
+    
+            idx_vid = cellfun(@(C) contains(C, vid_name_legacy), saccade_features_pat.pre_saccade_file);
+            saccade_features_vid = saccade_features_pat(idx_vid, :);
+    
+            frame_pre = cellfun(@(C) str2double(C(regexp(C, fr_str)+length(fr_str):regexp(C, file_str)-1)), ...
+                saccade_features_vid.pre_saccade_file);
+            frame_post = cellfun(@(C) str2double(C(regexp(C, fr_str)+length(fr_str):regexp(C, file_str)-1)), ...
+                saccade_features_vid.post_saccade_file);
+    
+            saccade_features_vid = saccade_features_vid(...
+                ismember(frame_pre, frame_saccade) & ismember(frame_post, frame_fixation), :);
+    
+            fixation_novelty = saccade_features_vid.distance;
+    
+            % Keep only saccades that match
+            frame_pre = cellfun(@(C) str2double(C(regexp(C, fr_str)+length(fr_str):regexp(C, file_str)-1)), ...
+                saccade_features_vid.pre_saccade_file);
+            frame_post = cellfun(@(C) str2double(C(regexp(C, fr_str)+length(fr_str):regexp(C, file_str)-1)), ...
+                saccade_features_vid.post_saccade_file);
+    
+            idx_saccade = ismember(frame_saccade, frame_pre);
+            idx_fixation = ismember(frame_fixation, frame_post);
+    
+            sample_saccade = find(saccades);
+            sample_fixation = find(fixations);
+    
+            saccades(sample_saccade(~idx_saccade)) = 0;
+            fixations(sample_fixation(~idx_fixation)) = 0;
+    
+            fixations(fixations == 1) = fixation_novelty;
+
+        end
+
+        %% Add saccade vector to stimuli
 
         x = [eval(stim_features{1})];
         y = lfp; 
@@ -104,6 +152,12 @@ for pat = 1:length(patients)
         time = (0:length(x)-1) / fs_neural;
     
         if size(x,2) > size(x,1), x = x'; end
+
+        %% Add fixation novelty
+        x = [x, fixations];
+
+        %% Add pupil diameter
+        x = [x, pupil'];
 
         %% Load film cuts
         if strcmp(vid_name_legacy, 'Inscapes') || strcmp(vid_name_legacy, 'Resting_fixation') 
@@ -191,27 +245,31 @@ for pat = 1:length(patients)
         if strcmp(vid_name_legacy, 'Resting_fixation')
             lfp = lfp(1:fs*300, :);
             hfa = hfa(1:fs*300, :);
+            saccades = saccades(1:fs*300);
             fixations = fixations(1:fs*300);
+            pupil = pupil(1:fs*300);
             save(sprintf('%s/%s.mat', data_pat_dir, vid_name_legacy), ...
-                'lfp', 'hfa', 'fixations', 'fs');
+                'lfp', 'hfa', 'saccades', 'fixations', 'pupil', 'fs');
         elseif strcmp(vid_name_legacy, 'Inscapes')
             audio_env = audio_ds';
             save(sprintf('%s/%s.mat', data_pat_dir, vid_name_legacy), ...
-                'lfp', 'hfa', 'audio_env', 'fixations', 'fs');
+                'lfp', 'hfa', 'audio_env',  'saccades', 'fixations', 'pupil', 'fs');
         else 
             audio_env = audio_ds';
             film_cuts = scenes_vec';
             save(sprintf('%s/%s.mat', data_pat_dir, vid_name_legacy), ...
-                'lfp', 'hfa', 'film_cuts', 'audio_env', 'fixations', 'fs');
+                'lfp', 'hfa', 'film_cuts', 'audio_env',  'saccades', 'fixations', 'pupil', 'fs');
 
             if strcmp('Despicable_Me_English', vid_name_legacy)
                 lfp = lfp(1:fs*300, :);
                 hfa = hfa(1:fs*300, :);
                 audio_env = audio_env(1:fs*300);
                 film_cuts = film_cuts(1:fs*300);
+                saccades = saccades(1:fs*300);
                 fixations = fixations(1:fs*300);
+                pupil = pupil(1:fs*300);
                 save(sprintf('%s/Despicable_Me_English_5min.mat', data_pat_dir), ...
-                    'lfp', 'hfa', 'film_cuts', 'audio_env', 'fixations', 'fs');
+                    'lfp', 'hfa', 'film_cuts', 'audio_env', 'saccades', 'fixations', 'pupil', 'fs');
             end
         end
 
@@ -366,9 +424,9 @@ for pat = 1:length(patients)
             HFA_monkey = HFA{idx_vid}(1:fs*300, :);
             X_monkey = X{idx_vid}(1:fs*300, :);
         
-            m_varx_mov{end+1} = varx(Y_insc,na,X_monkey,nb,gamma);
-            m_varx_mov_hfa{end+1} = varx(HFA_insc,na_hfa,X_monkey,nb,gamma);
-            vids_indiv{end+1} = 'Inscapes_5min';
+            m_varx_mov{end+1} = varx(Y_monkey,na,X_monkey,nb,gamma);
+            m_varx_mov_hfa{end+1} = varx(HFA_monkey,na_hfa,X_monkey,nb,gamma);
+            vids_indiv{end+1} = 'Monkey_5min';
 
 
         end

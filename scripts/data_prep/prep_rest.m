@@ -1,17 +1,19 @@
 %% Select a patient -> add this variable everywhere
-pat_select = 'NS135';
+pat_select = 'NS136';
 
 %% Types of recordings to preprocess
 % inscapes, rest
-data_type = 'inscapes';
+data_type = 'rest';
 
 %% Directories 
 options.w_dir = pwd; 
-options.drive_dir = '/media/DATA/ieeg_plot';                                        % Path to organized metadata
-options.data_drive_dir = '/media/DATA/ECoGData';                                    % Path to raw data on hard drive
+options.drive_dir = '/media/max/e61df479-8f57-4855-b852-04ccdfb12a6c/ieeg_plot';        % Path to organized metadata
+options.data_drive_dir = '/media/max/e61df479-8f57-4855-b852-04ccdfb12a6c/ECoGData';    % Path to raw data on hard drive
 options.sample_dir = '/media/max/Workspace/Data/movies_legacy_sample';
+options.saccade_dir = '/media/max/Workspace/Data/saccade_data';                         % Path to organized saccade data
 
 options.data_dir = sprintf('%s/Tobii/Patients', options.data_drive_dir);            % Data directory
+options.neural_dir = 'matlab_data/Neural';                                          % Neural data 
 options.neural_prep_dir = 'matlab_data/Neural_prep';                                % Preprocessed neural data 
 options.env_dir = 'matlab_data/Envelope_phase';                                     % Envelope and phase
 options.eye_dir = 'matlab_data/Eyetracking';                                        % Eytracking data 
@@ -19,14 +21,14 @@ options.raw_dir = 'matlab_data/raw';                                            
 options.im_data_dir = sprintf('%s/Data', options.drive_dir);                        % Data from intermediary analysis steps
 
 % Add some necessary paths
-addpath(genpath(sprintf('%s/Functions', options.w_dir)))                            % Functions
-addpath(genpath(sprintf('%s/Organize', options.drive_dir)))                         % Tables and variables for organization
-addpath(genpath(sprintf('%s/External', options.w_dir)))                             % External packages
+addpath(genpath('./utils'))                                                         % Functions
+addpath(genpath('./organize'))                                                      % Tables and variables for organization
+% addpath(genpath(sprintf('%s/External', options.w_dir)))                           % External packages
 
 %% Task (Movies, Freeviewing, Fixation, RhythmicSaccade) 
 if strcmp(data_type, 'rest')
     options.task = 'Fixation';
-elseif strcmp(data_type, 'inscapes')
+elseif strcmp(data_type, 'inscapes') | strcmp(data_type, 'movies')
     options.task = 'Movies';
 end
 
@@ -36,10 +38,10 @@ options.visualize_trfs = true;                                                  
 
 %% List of patients
 options.patients = dir(options.sample_dir);
-options.patients = options.patients(cellfun(@(C) strcmp(C, pat_select), {options.patients.name}));
+% options.patients = options.patients(cellfun(@(C) strcmp(C, pat_select), {options.patients.name}));
 
 %% Definition of frequency bands
-options.freq_bands = [70,150];                                                      % Band limits in Hz
+options.freq_bands = {[70,150]};                                                    % Band limits in Hz
 options.band_names = {'BHA'};                                                       % Names
 options.dsf = 5;                                                                    % Downsampling factor for all frequency bands
 options.band_select = {'BHA'};                                                      % Frequency band {'raw', 'Theta', 'Alpha', 'Beta', 'BHA'}
@@ -48,6 +50,8 @@ if strcmp(data_type, 'rest')
     options.vid_names = {'Resting_fixation'};                                       % Videos {'Monkey', 'Despicable_Me_English', 'Despicable_Me_Hungarian', 'The_Present_Rep_1', 'The_Present_Rep_2'}
 elseif strcmp(data_type, 'inscapes')
     options.vid_names = {'Inscapes'};  
+elseif strcmp(data_type, 'movies')
+    options.vid_names = {'Inscapes', 'Monkey', 'Despicable_Me_English', 'Despicable_Me_Hungarian', 'The_Present_Rep_1', 'The_Present_Rep_2'};
 end
 
 %% Saccade detection
@@ -61,6 +65,10 @@ options.saccade_selection = 'first_last';                                       
 
 options.screen_size = [1920, 1080];                                                 % Screen size of the Tobii eyetracker [px]
 options.screen_dimension = [509.2 286.4];                                           % Screen size of the Tobii eyetracker [mm]
+
+%% Pupil
+options.t_edge_pupil = 0.2;                                                         % Time around edges to exclude [s]
+options.pupil_lp = 10;                                                              % Lowpass filter cutoff for pupil size [Hz]
 
 %% Triggers in eyetracking data
 options.trigger_IDs.start_ID = 11;

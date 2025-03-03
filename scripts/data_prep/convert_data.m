@@ -1,8 +1,8 @@
 %% Reorganize data and select data relevant for this analysis
 
 % Source directories
-data_dir = '/media/DATA/ECoGData/Tobii/Patients';
-saccade_dir = '/media/DATA/ieeg_plot/Data/saccade_data';
+data_dir = '/media/max/e61df479-8f57-4855-b852-04ccdfb12a6c/ECoGData/Tobii/Patients';
+saccade_dir = '/media/max/Workspace/Data/saccade_data';
 
 % Output directory
 sample_dir = '/media/max/Workspace/Data/movies_legacy_sample';
@@ -31,13 +31,18 @@ for i = 1:length(patients)
     for v = 1:length(vids)
     
         % HFA
+        hfa_file = sprintf('%s/%s', sample_pat, vids(v).name);
+
         load(sprintf('%s/%s', data_pat, vids(v).name), 'envelope_ds', 'fs_ds', 'time_ds')
         envelope = envelope_ds;
         fs = fs_ds;
     
-        save(sprintf('%s/%s', sample_pat, vids(v).name), 'envelope', 'fs')
+        if exist(hfa_file, 'file') == 0
+            save(hfa_file, 'envelope', 'fs')
+        end
     
-        load(sprintf('%s/%s_%s', saccade_dir, patients{i}, vids(v).name), 'saccade_onset', 'fixation_onset', 'eye')
+        % Saccades and fixation
+        load(sprintf('%s/%s_%s', saccade_dir, patients{i}, vids(v).name), 'saccade_onset', 'fixation_onset', 'pupil', 'eye')
         eye_time = eye.time;
     
         fix_sample = round(interp1(time_ds, 1:length(time_ds), eye_time(fixation_onset == 1)));
@@ -47,20 +52,46 @@ for i = 1:length(patients)
         sac_sample = round(interp1(time_ds, 1:length(time_ds), eye_time(saccade_onset == 1)));
         saccades = zeros(length(time_ds),1);
         saccades(sac_sample) = 1;
+
+        % Resample Pupil
+        pupil = interp1(eye_time, pupil, time_ds);
     
-        save(sprintf('%s/%s', sample_pat_sim, vids(v).name), 'saccades', 'fixations', 'fs')
+        % Frame corresponding to saccade
+        if ~strcmp(vids(v).name, 'Resting_fixation.mat')
+
+            idx_frame_time = 1:length(eye.frame_time);
+
+            idx_duplicate = find(diff(eye.frame_time) == 0);
+
+            eye.frame_time(idx_duplicate) = [];
+            idx_frame_time(idx_duplicate) = [];
+
+            frame_saccade = round((interp1(eye.frame_time, idx_frame_time, eye_time(saccade_onset == 1))));
+            frame_fixation = round((interp1(eye.frame_time, idx_frame_time, eye_time(fixation_onset == 1))));
+
+        else
+            frame_saccade = []; frame_fixation = [];
+        end
+
+        save(sprintf('%s/%s', sample_pat_sim, vids(v).name), 'saccades', 'fixations', 'frame_saccade', 'frame_fixation', 'pupil', 'fs')
     
         % LFP
-        if exist(sprintf('%s/%s', data_lfp_pat, vids(v).name), 'file') ~= 0
+        lfp_file = sprintf('%s/%s', sample_lfp_pat, vids(v).name);
 
-            load(sprintf('%s/%s', data_lfp_pat, vids(v).name), 'ieeg')
-            lfp = ieeg.data;
-            fs_lfp = ieeg.fs;
+        if exist(lfp_file, 'file') == 0
 
-            % Resample 
-            lfp = resample(lfp, 1e4, round(1e4*length(lfp)/length(envelope)));
+            if exist(sprintf('%s/%s', data_lfp_pat, vids(v).name), 'file') ~= 0
     
-            save(sprintf('%s/%s', sample_lfp_pat, vids(v).name), 'lfp', 'fs')
+                load(sprintf('%s/%s', data_lfp_pat, vids(v).name), 'ieeg')
+                lfp = ieeg.data;
+                fs_lfp = ieeg.fs;
+    
+                % Resample 
+                lfp = resample(lfp, 1e4, round(1e4*length(lfp)/length(envelope)));
+        
+                save(lfp_file, 'lfp', 'fs')
+    
+            end
 
         end
 
