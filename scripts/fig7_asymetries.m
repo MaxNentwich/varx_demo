@@ -2,16 +2,18 @@
 
 %% Define patients
 example_pat = 'NS127_02';
-signal_type = 'LFP';
+signal_type = 'HFA';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient;
 
-fig_font = 20;
+fig_font = 24;
 
 c_scale = 0.4;
 
 fig_dir = '../results/figures';
+model_dir = '../results/models_extend';
+% model_dir = '../results/models_revision_1';
 
 load('../data/movie_subs_table.mat', 'movie_subs_table');
 
@@ -44,10 +46,14 @@ direction_contact = cell(1, length(patients));
 
 for pat = 1:length(patients)
     
+    if exist(sprintf('%s/%s_varx_models.mat', model_dir, patients{pat})) == 0
+        continue
+    end
+
     if strcmp(signal_type, 'LFP')
-        load(sprintf('../results/models/%s_varx_models.mat', patients{pat}), 'm_varx', 'labels')
+        load(sprintf('%s/%s_varx_models.mat', model_dir, patients{pat}), 'm_varx', 'labels')
     elseif strcmp(signal_type, 'HFA')
-        load(sprintf('../results/models/%s_varx_models.mat', patients{pat}), 'm_varx_hfa', 'labels')
+        load(sprintf('%s/%s_varx_models.mat', model_dir, patients{pat}), 'm_varx_hfa', 'labels')
         m_varx = m_varx_hfa;
     end
 
@@ -194,7 +200,7 @@ bnd = find(diff(idx_sort_roi(idx_sort)) ~= 0);
 if poster_size 
     figure('Units', 'inches', 'Position', [1,1,7,4])
 else
-    figure('Position', [350,250,625,420])
+    figure('Position', [350,250,675,450])
 end
 
 imagesc(varx_asym_ex)

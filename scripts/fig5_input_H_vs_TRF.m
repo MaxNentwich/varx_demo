@@ -1,17 +1,19 @@
 %% Difference between VARX model input filter H and TRF
 
 %% Define patients
+model_dir = '../results/models_revision_1';
+
 example_pat = 'NS127_02';
 
 signal_type = 'LFP';
 
-% Stimulus 3 -> audio; 1 -> fixations; 2 -> cuts
-idx_stim = 3;
+% Stimulus 'fixations', 'film_cuts', 'audio_env'
+stim = 'audio_env';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient;
 
-fig_font = 16;
+fig_font = 20;
 
 fig_dir = '../results/figures';
 if exist(fig_dir, 'dir') == 0, mkdir(fig_dir), end
@@ -38,9 +40,9 @@ labels_all = cell(1, length(patients));
 for pat = 1:length(patients)
     
     if strcmp(signal_type, 'LFP')
-        load(sprintf('../results/models/%s_varx_models.mat', patients{pat}), 'm_varx', 'H', 'labels', 'fs_neural')
+        load(sprintf('%s/%s_varx_models.mat', model_dir, patients{pat}), 'm_varx', 'H', 'labels', 'fs_neural', 'stim_features')
     elseif strcmp(signal_type, 'HFA')
-        load(sprintf('../results/models/%s_varx_models.mat', patients{pat}), 'm_varx_hfa', 'H_hfa', 'labels', 'fs_neural')
+        load(sprintf('%s/%s_varx_models.mat', model_dir, patients{pat}), 'm_varx_hfa', 'H_hfa', 'labels', 'fs_neural', 'stim_features')
         m_varx = m_varx_hfa;
         H = H_hfa;
     end
@@ -50,6 +52,8 @@ for pat = 1:length(patients)
     labels_all{pat} = cellfun(@(C) sprintf('%s_%s', patients{pat}, C), labels, 'UniformOutput', false);
 
 end
+
+idx_stim = find(ismember(stim_features, stim));
 
 %% Summarize data
 

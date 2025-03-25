@@ -42,22 +42,32 @@ for i = 1:length(patients)
         end
     
         % Saccades and fixation
-        load(sprintf('%s/%s_%s', saccade_dir, patients{i}, vids(v).name), 'saccade_onset', 'fixation_onset', 'pupil', 'eye')
-        eye_time = eye.time;
-    
-        fix_sample = round(interp1(time_ds, 1:length(time_ds), eye_time(fixation_onset == 1)));
-        fixations = zeros(length(time_ds),1);
-        fixations(fix_sample) = 1;
-    
-        sac_sample = round(interp1(time_ds, 1:length(time_ds), eye_time(saccade_onset == 1)));
-        saccades = zeros(length(time_ds),1);
-        saccades(sac_sample) = 1;
+        if strcmp(vids(v).name, 'Eyes_Closed_Rest.mat') || strcmp(vids(v).name, 'Eyes_Closed_Rest_2.mat')
 
-        % Resample Pupil
-        pupil = interp1(eye_time, pupil, time_ds);
+            saccades = [];
+            fixations = [];
+            pupil = [];
+
+        else
+
+            load(sprintf('%s/%s_%s', saccade_dir, patients{i}, vids(v).name), 'saccade_onset', 'fixation_onset', 'pupil', 'eye')
+            eye_time = eye.time;
+        
+            fix_sample = round(interp1(time_ds, 1:length(time_ds), eye_time(fixation_onset == 1)));
+            fixations = zeros(length(time_ds),1);
+            fixations(fix_sample) = 1;
+        
+            sac_sample = round(interp1(time_ds, 1:length(time_ds), eye_time(saccade_onset == 1)));
+            saccades = zeros(length(time_ds),1);
+            saccades(sac_sample) = 1;
+    
+            % Resample Pupil
+            pupil = interp1(eye_time, pupil, time_ds);
+
+        end
     
         % Frame corresponding to saccade
-        if ~strcmp(vids(v).name, 'Resting_fixation.mat')
+        if ~strcmp(vids(v).name, 'Resting_fixation.mat') && ~strcmp(vids(v).name, 'Eyes_Closed_Rest.mat')
 
             idx_frame_time = 1:length(eye.frame_time);
 

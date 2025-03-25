@@ -14,7 +14,7 @@ from neuromaps import transforms
 import nibabel as nib
 
 # Choose annotation ['myelin', 'timescale', 'gradient_1', 'gradient_2']
-annot_name = 'gradient_2'
+annot_name = 'myelin'
 
 #%% Load maps, transform and average in DK atlas parcels
 

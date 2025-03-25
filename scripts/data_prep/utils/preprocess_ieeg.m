@@ -16,9 +16,9 @@ for pat = 1:length(options.patients)
         %% Check if the file was already preprocessed
         out_file = sprintf('%s/%s/%s/%s', options.data_dir, options.patients(pat).name, options.neural_prep_dir, data_files(v).name);
         
-        if exist(out_file, 'file') ~= 0
-            continue
-        end
+        % if exist(out_file, 'file') ~= 0
+        %     continue
+        % end
         
         fprintf('Processing subject %s, %s \n', options.patients(pat).name, data_files(v).name)
 
@@ -54,14 +54,34 @@ for pat = 1:length(options.patients)
             warning('Unnacounted data channels without matching labels! \n')
 
         end
-        
+
+        %% Patient NS178 has some single sample artifacts in the data -> interpolates
+
+        if strcmp(options.patients(pat).name, 'NS178')
+    
+            samples_data = 1:size(ieeg.data,2);
+    
+            data_diff = mean(abs(diff(ieeg.data,[],2)));
+    
+            [~, idx_gap] = findpeaks(double(isoutlier(data_diff)));
+            idx_gap = idx_gap+1;
+            
+            idx_good = setdiff(samples_data, idx_gap);
+    
+            for ch = 1:size(ieeg.data,1)
+                ieeg.data(ch,idx_gap) = interp1(samples_data(idx_good), ieeg.data(ch, idx_good), idx_gap);
+            end
+    
+        end
+            
         % Remove bad channels
         load(sprintf('%s/%s/matlab_data/Bad_channels/bad_channels.mat', options.data_dir, options.patients(pat).name), ...
             'bad_chns_manual')
         
         bad_chns_manual(cellfun(@(C) strcmp(C, '[]'), bad_chns_manual)) = [];
         
-        idx_bad = cellfun(@(C) find(ismember(ieeg.label, C)), bad_chns_manual);
+        idx_bad = cellfun(@(C) find(ismember(ieeg.label, C)), bad_chns_manual, 'UniformOutput', false);
+        idx_bad = cell2mat(idx_bad(cellfun(@(C) ~isempty(C), idx_bad)));
         
         ieeg.data(idx_bad,:) = [];
         ieeg.label(idx_bad) = [];
@@ -74,7 +94,7 @@ for pat = 1:length(options.patients)
         % Plot before and after 
         if options.visualize_preproc 
             figure
-            view_spec(ieeg.data(plot_ch,:), fs, 240)
+            view_spec(ieeg.data(plot_ch,:), fs, 1, 300)
             
             figure
             plot(ieeg.data(plot_ch,:))         
@@ -97,7 +117,7 @@ for pat = 1:length(options.patients)
         
         if options.visualize_preproc 
             figure
-            view_spec(ieeg.data(plot_ch,:), fs, 240)
+            view_spec(ieeg.data(plot_ch,:), fs, 1, 300)
             
             figure
             plot(ieeg.data(plot_ch,:))
@@ -133,7 +153,7 @@ for pat = 1:length(options.patients)
             plot(ieeg.data(plot_ch,:))
             
             figure
-            view_spec(ieeg.data(plot_ch,:), fs, 240)
+            view_spec(ieeg.data(plot_ch,:), fs, 1, 300)
          
             plot_label = ieeg.label(plot_ch);
 
@@ -189,7 +209,7 @@ for pat = 1:length(options.patients)
             plot(ieeg.data(:,plot_idx))
         
             figure
-            view_spec(ieeg.data(:,plot_idx), fs, 240)
+            view_spec(ieeg.data(:,plot_idx), fs, 1, 300)
 
         end
             

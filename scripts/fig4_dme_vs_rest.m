@@ -1,7 +1,9 @@
 %% Figure 1 Difference between Despicable Me English and resting fixation 
 
 %% Figure settings
-fig_font = 16;
+fig_font = 20;
+
+model_dir = '../results/models_revision_1';
 
 fig_dir = '../results/figures';
 if exist(fig_dir, 'dir') == 0, mkdir(fig_dir), end
@@ -17,11 +19,11 @@ example_pat = 'NS127_02';
 
 signal_type = 'LFP';
 
-% Movie segment ['Despicable_Me_English_5min', 'Despicable_Me_English_last_5min', 'Inscapes_5min', 'Inscapes_last_5min', 'Monkey_5min']
-movie_select = 'Monkey_5min';
+% Movie segment ['Despicable_Me_English_5min', 'Despicable_Me_English_last_5min', 'Inscapes_5min', 'Inscapes_last_5min', 'Monkey_5min', 'Eyes_Closed_Rest']
+movie_select = 'Despicable_Me_English_5min';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
-patients = patient_list.Patient(table2array(sum(patient_list(:,2:end),2) == 2));
+patients = patient_list.Patient(table2array(sum(patient_list(:,2:3),2) == 2));
 
 % Movie table for coordinates
 load('../data/movie_subs_table.mat', 'movie_subs_table');
@@ -58,9 +60,9 @@ for pat = 1:length(patients)
     
     % Load data
     if strcmp(signal_type, 'LFP')
-        load(sprintf('../results/models/%s_varx_models.mat', patients{pat}), 'm_varx_mov', 'vid_recs', 'labels')
+        load(sprintf('%s/%s_varx_models.mat', model_dir, patients{pat}), 'm_varx_mov', 'vid_recs', 'labels')
     elseif strcmp(signal_type, 'HFA')
-        load(sprintf('../results/models/%s_varx_models.mat', patients{pat}), 'm_varx_mov_hfa', 'vid_recs', 'labels')
+        load(sprintf('%s/%s_varx_models.mat', model_dir, patients{pat}), 'm_varx_mov_hfa', 'vid_recs', 'labels')
         m_varx_mov = m_varx_mov_hfa;
     end
 
@@ -69,7 +71,11 @@ for pat = 1:length(patients)
     idx_dme_shift = ismember(vid_recs, 'Despicable_Me_English_5min_shift');
     idx_rest = ismember(vid_recs, 'Resting_fixation');
 
+    fprintf('%s, %d\n', patients{pat}, find(idx_dme_5))
+
     if sum(idx_dme_5) == 0, continue, end
+
+
 
     % Compute R values
     varX_Rvalue_dme{pat} = abs(sqrt(1-exp(-m_varx_mov{idx_dme_5}.A_Deviance/m_varx_mov{idx_dme_5}.T)));  

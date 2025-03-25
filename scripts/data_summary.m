@@ -9,11 +9,15 @@ rec_names = cell(length(patients),1);
 length_rec = NaN(length(patients),1);
 n_chns = NaN(length(patients),1);
 
+duplicate_names = {'The_Present.mat', 'Monkey1.mat', 'Monkey2.mat', 'Monkey5.mat', 'Despicable_Me_English_5min.mat'};
+
 %% Load data
 for pat = 1:length(patients)
 
     recordings = dir(sprintf('%s/%s', data_dir, patients(pat).name));
     recordings([recordings.isdir]) = [];
+
+    recordings(ismember({recordings.name}, duplicate_names)) = [];
 
     rec_names{pat} = {recordings.name};
     length_rec_pat = NaN(1,length(recordings));
@@ -32,15 +36,15 @@ for pat = 1:length(patients)
 end
 
 %% Load demographics
-demographics = readtable('./data/demographics.xlsx');
+demographics = readtable('../data/demographics_ns.xlsx');
 demographics(~cellfun(@(C) contains(C, 'NS'), demographics.PatientID), :) = [];
 
 % Align with patient names
 age = NaN(length(patients),1);
 sex = cell(length(patients),1);
 for pat = 1:length(patients)
-    age(pat) = demographics.Age(cellfun(@(C) contains(C, patients(pat).name), demographics.PatientID));
-    sex{pat} = demographics.Sex(cellfun(@(C) contains(C, patients(pat).name), demographics.PatientID));
+    age(pat) = demographics.Age(cellfun(@(C) strcmp(C, patients(pat).name), demographics.PatientID));
+    sex{pat} = demographics.Sex(cellfun(@(C) strcmp(C, patients(pat).name), demographics.PatientID));
 end
 
 %% Organize
@@ -116,4 +120,4 @@ idx_reorder = [idx_id, idx_age, idx_sex, setdiff(1:length(rec_table.Properties.V
 rec_table = rec_table(:,idx_reorder);
 
 % Save the table in CSV
-writetable(rec_table, './data/recording_summary.csv')  
+writetable(rec_table, '../data/recording_summary.csv')  

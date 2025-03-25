@@ -1,5 +1,5 @@
 %% Select a patient -> add this variable everywhere
-pat_select = 'NS145';
+pat_select = 'NS174_03';
 
 %% Types of recordings to preprocess
 % inscapes, rest, eyes_closed_rest, movies

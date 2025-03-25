@@ -15,9 +15,7 @@ function save_saccade_data(options)
 
         % Get a list of movies recorded for the current patient
         files = dir(sprintf('%s/%s/%s', options.data_dir, options.patients(pat).name, options.eye_dir));
-
-        % Select only the files contained in stim_names
-        files = files(cellfun(@(F) sum(cellfun(@(V) contains(F, V), options.vid_names)), {files.name}) == 1);
+        files = files(~[files.isdir]);
 
         % Skip the patients if selected movies were not recorded
         if isempty(files), continue, end

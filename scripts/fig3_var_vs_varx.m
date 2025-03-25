@@ -1,6 +1,8 @@
 %% Difference between VAR and VARX models
 
 %% Define patients
+model_dir = '../results/models_revision_1';
+
 example_pat = 'NS127_02';
 
 signal_type = 'HFA';
@@ -8,7 +10,7 @@ signal_type = 'HFA';
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient;
 
-fig_font = 16;
+fig_font = 20;
 
 fig_dir = '../results/figures';
 if exist(fig_dir, 'dir') == 0, mkdir(fig_dir), end
@@ -44,15 +46,15 @@ R_diff_features = cell(1, length(patients));
 for pat = 1:length(patients)
     
     if strcmp(signal_type, 'LFP')
-        load(sprintf('../results/models/%s_varx_models.mat', patients{pat}), 'm_varx', 'm_varx_features', 'feature_combos')
-        idx_none = ismember(feature_combos, 'None');
-        m_var = m_varx_features{idx_none};
+        load(sprintf('%s/%s_varx_models.mat', model_dir, patients{pat}), 'm_varx', 'm_varx_additive', 'stim_features')
+        idx_none = ismember(stim_features, 'None');
+        m_var = m_varx_additive{1};
     elseif strcmp(signal_type, 'HFA')
-        load(sprintf('../results/models/%s_varx_models.mat', patients{pat}), 'm_varx_hfa', 'm_varx_hfa_features', 'feature_combos')
-        idx_none = ismember(feature_combos, 'None');
-        m_var = m_varx_hfa_features{idx_none};
+        load(sprintf('%s/%s_varx_models.mat', model_dir, patients{pat}), 'm_varx_hfa', 'm_varx_additive_hfa', 'stim_features')
+        idx_none = ismember(stim_features, 'None');
+        m_var = m_varx_additive_hfa{1};
         m_varx = m_varx_hfa;
-        m_varx_features = m_varx_hfa_features;
+        m_varx_features = m_varx_additive_hfa;
     end
 
     model_var{pat} = m_var;
@@ -82,50 +84,6 @@ for pat = 1:length(patients)
 
     r_diff_mean(pat) = mean(varx_Rvalue{pat}(idx_sig==1) - var_Rvalue{pat}(idx_sig==1));
 
-    %% Coordinates
-
-    %% Compute R values for models with different features
-    if length(feature_combos) == 0, continue, end
-
-    R_varx_feat = NaN(size(varx_Rvalue{pat},1), size(varx_Rvalue{pat},2), length(feature_combos));
-    for feat = 1:length(feature_combos)
-        R_varx_feat(:,:,feat) = abs(sqrt(1-exp(-m_varx_features{feat}.A_Deviance/m_varx_features{feat}.T)));  
-    end
-    
-    if select_sig
-
-        idx_sig_varx = m_varx.A_pval < p_thresh;
-        idx_sig_varx = idx_sig_varx - (eye(size(idx_sig_varx)) .* diag(idx_sig_varx));
-    
-        idx_sig_feat = NaN(size(varx_Rvalue{pat},1), size(varx_Rvalue{pat},2), length(feature_combos));
-        for feat = 1:length(feature_combos)
-            idx_sig_feat(:,:,feat) = m_varx_features{feat}.A_pval < p_thresh;
-            idx_sig_feat(:,:,feat) = idx_sig_feat(:,:,feat) - (eye(size(idx_sig_feat(:,:,feat))) .* diag(idx_sig_feat(:,:,feat)));
-        end
-    
-        idx_sig_feat = (sum(idx_sig_feat,3) == length(feature_combos)) & idx_sig_varx;
-
-    else
-        idx_sig_feat = eye(size(varx_Rvalue{pat})) == 0;
-    end
-
-    idx_none = ismember(feature_combos, 'None');
-    R_varx_none = R_varx_feat(:,:,idx_none);
-    
-    R_varx_feat(:,:,idx_none) = [];
-    R_varx_feat = cat(3, varx_Rvalue{pat}, R_varx_feat);
-
-    feature_combos(idx_none) = [];
-    C =  {{'Fixation, Cuts and Sound'}, feature_combos};
-    feature_combos = cat(2, C{:});
-
-    R_diff_vec = NaN(sum(idx_sig_feat(:)), length(feature_combos));
-    for feat = 1:length(feature_combos)
-        R_feat = R_varx_feat(:,:,feat);
-        R_diff_vec(:,feat) = R_feat(idx_sig_feat) - R_varx_none(idx_sig_feat);     
-    end
-
-    R_diff_features{pat} = mean(R_diff_vec);
 
 end
 
@@ -139,59 +97,6 @@ fprintf('Ratio of significant channels: median=%1.1e p=%1.5f, N=%d\n', ...
     median(n_sig_diff), p_chans, length(n_sig_diff))
 fprintf('Effect size: median=%1.1e p=%1.5f, N=%d\n', ...
     median(real(r_diff_mean)), p_rval, length(r_diff_mean))
-
-% Models with different features
-R_feat_mat = real(cell2mat(R_diff_features));
-R_feat_mat = reshape(R_feat_mat, [length(feature_combos), length(R_diff_features)]);
-
-ci = zeros(size(R_feat_mat,1),2);
-for i = 1:size(R_feat_mat,1)
-    [~,~,ci(i,:),~] = ttest(R_feat_mat(i,:));
-end
-
-% Test difference of individual features
-p_fix_cuts = signrank(R_feat_mat(ismember(feature_combos, 'Fixations'), :), ...
-    R_feat_mat(ismember(feature_combos, 'Cuts'), :));
-med_fix_cuts = median(R_feat_mat(ismember(feature_combos, 'Fixations'), :) ...
-    - R_feat_mat(ismember(feature_combos, 'Cuts'), :));
-
-p_fix_sound = signrank(R_feat_mat(ismember(feature_combos, 'Fixations'), :), ...
-    R_feat_mat(ismember(feature_combos, 'Sound'), :));
-med_fix_sound = median(R_feat_mat(ismember(feature_combos, 'Fixations'), :) ...
-    - R_feat_mat(ismember(feature_combos, 'Sound'), :));
-
-p_cuts_sound = signrank(R_feat_mat(ismember(feature_combos, 'Cuts'), :), ...
-    R_feat_mat(ismember(feature_combos, 'Sound'), :));
-med_cuts_sound = median(R_feat_mat(ismember(feature_combos, 'Cuts'), :) ...
-    - R_feat_mat(ismember(feature_combos, 'Sound'), :));
-
-p_all_sound = signrank(R_feat_mat(ismember(feature_combos, 'Fixation, Cuts and Sound'), :), ...
-    R_feat_mat(ismember(feature_combos, 'Sound'), :));
-med_all_sound = median(R_feat_mat(ismember(feature_combos, 'Fixation, Cuts and Sound'), :) ...
-    - R_feat_mat(ismember(feature_combos, 'Sound'), :));
-
-p_all_cuts = signrank(R_feat_mat(ismember(feature_combos, 'Fixation, Cuts and Sound'), :), ...
-    R_feat_mat(ismember(feature_combos, 'Cuts'), :));
-med_all_cuts = median(R_feat_mat(ismember(feature_combos, 'Fixation, Cuts and Sound'), :) ...
-    - R_feat_mat(ismember(feature_combos, 'Cuts'), :));
-
-p_all_fix = signrank(R_feat_mat(ismember(feature_combos, 'Fixation, Cuts and Sound'), :), ...
-    R_feat_mat(ismember(feature_combos, 'Fixations'), :));
-med_all_fix = median(R_feat_mat(ismember(feature_combos, 'Fixation, Cuts and Sound'), :) ...
-    - R_feat_mat(ismember(feature_combos, 'Fixations'), :));
-
-fprintf('Fixations vs cuts: median%cR=%1.1e, p=%1.5f, N=%d\n', ...
-    916, med_fix_cuts, p_fix_cuts, size(R_feat_mat,2))
-fprintf('Fixations vs sound: median%cR=%1.1e, p=%1.5f, N=%d\n', ...
-    916, med_fix_sound, p_fix_sound, size(R_feat_mat,2))
-fprintf('Cuts vs sound: median%cR=%1.1e, p=%1.5f, N=%d\n', ...
-    916, med_cuts_sound, p_cuts_sound, size(R_feat_mat,2))
-fprintf('All vs sound: median%cR=%1.1e, p=%1.5f, N=%d\n', ...
-    916, med_all_sound, p_all_sound, size(R_feat_mat,2))
-fprintf('All vs cuts: median%cR=%1.1e, p=%1.5f, N=%d\n', ...
-    916, med_all_cuts, p_all_cuts, size(R_feat_mat,2))
-fprintf('All vs fixations: median%cR=%1.1e, p=%1.5f, N=%d\n', ...
-    916, med_all_fix, p_all_fix, size(R_feat_mat,2))
 
 %% Plot an example
 idx_example = ismember(patients, example_pat);
@@ -333,34 +238,4 @@ title(['Effect' newline 'size'])
 fontsize(gcf, fig_font, 'points')
 
 exportgraphics(gcf, sprintf('%s/fig3_varx_full_none_sig_ch_diff_R_%s_sig_ch_%d.png', ...
-    fig_dir, signal_type, select_sig), 'Resolution', 600)
-
-%% Features
-if poster_size 
-    figure('Units', 'inches', 'Position', [1,1,7.5,5]);
-    feature_combos = cellfun(@(C) strrep(C, 'and', '&'), feature_combos, 'UniformOutput', false);
-    feature_combos = cellfun(@(C) strrep(C, 'Fixations', 'Fix.'), feature_combos, 'UniformOutput', false);
-    feature_combos = cellfun(@(C) strrep(C, 'Fixation', 'Fix.'), feature_combos, 'UniformOutput', false);
-else
-    figure('Position', [725,700,700,525])
-end
-
-hold on
-
-plot(flipud(mean(R_feat_mat,2)), 'r*-', 'LineWidth', 2)
-plot(flipud(ci(:,1)), 'k*-')
-plot(flipud(ci(:,2)), 'k*-')
-
-xticklabels(fliplr(feature_combos))
-xtickangle(45)
-
-xlim([0.5, length(ci)+0.5])
-
-ylabel('Mean \DeltaR')
-title('Input - No Input')
-grid('on')
-
-fontsize(gcf, fig_font, 'points')
-
-exportgraphics(gcf, sprintf('%s/fig3_R_features_%s_sig_ch_%d.png', ...
     fig_dir, signal_type, select_sig), 'Resolution', 600)

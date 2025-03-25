@@ -25,14 +25,24 @@ for pat = 1:length(options.patients)
         load(sprintf('%s/%s', data_files(v).folder, data_files(v).name), 'ieeg')
         
         % Load eyetracking data
-        load(sprintf('%s/%s/%s/%s', options.data_dir, options.patients(pat).name, options.eye_dir, data_files(v).name), 'eye')
+        if ~contains(data_files(v).name, 'Eyes_Closed_Rest')
+            load(sprintf('%s/%s/%s/%s', options.data_dir, options.patients(pat).name, options.eye_dir, data_files(v).name), 'eye')
+        else
+            load(sprintf('%s/%s/%s/Despicable_Me_English.mat', options.data_dir, options.patients(pat).name, options.eye_dir), 'eye')
+            eye.time = ieeg.time(1):1/eye.fs:ieeg.time(end);
+        end
         
         % Trigger samples 
-        start_sample = eye.triggers.trigger_sample(eye.triggers.trigger_ID == options.trigger_IDs.start_ID);
-
-        end_sample = eye.triggers.trigger_sample(eye.triggers.trigger_ID == options.trigger_IDs.end_ID_1);
-        if isempty(end_sample) 
-            end_sample = eye.triggers.trigger_sample(eye.triggers.trigger_ID == options.trigger_IDs.end_ID_2);
+        if contains(data_files(v).name, 'Resting_fixation.mat')
+            start_sample = eye.triggers.trigger_sample(1);
+            end_sample = eye.triggers.trigger_sample(2);
+        elseif ~contains(data_files(v).name, 'Eyes_Closed_Rest')
+            start_sample = eye.triggers.trigger_sample(eye.triggers.trigger_ID == options.trigger_IDs.start_ID);
+    
+            end_sample = eye.triggers.trigger_sample(eye.triggers.trigger_ID == options.trigger_IDs.end_ID_1);
+            if isempty(end_sample) 
+                end_sample = eye.triggers.trigger_sample(eye.triggers.trigger_ID == options.trigger_IDs.end_ID_2);
+            end
         end
         
         % Anti-aliasing filter
@@ -44,9 +54,11 @@ for pat = 1:length(options.patients)
         ieeg.data = interp1(ieeg.time, ieeg.data, eye.time);
 
         % Cut data at triggers
-        ieeg.data = ieeg.data(start_sample:end_sample, :);
-        ieeg.time = eye.time(start_sample:end_sample);
-        
+        if ~contains(data_files(v).name, 'Eyes_Closed_Rest')
+            ieeg.data = ieeg.data(start_sample:end_sample, :);
+            ieeg.time = eye.time(start_sample:end_sample);
+        end
+
         ieeg.fs = eye.fs;
         
         % Save data

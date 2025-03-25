@@ -28,8 +28,12 @@ for pat = 1:length(options.patients)
         load(sprintf('%s/%s', data_files(v).folder, data_files(v).name), 'ieeg')
        
         % Load eyetracking data
-        load(sprintf('%s/%s/%s/%s', options.data_dir, options.patients(pat).name, options.eye_dir, data_files(v).name), 'eye')
-        
+        if ~contains(data_files(v).name, 'Eyes_Closed_Rest')
+            load(sprintf('%s/%s/%s/%s', options.data_dir, options.patients(pat).name, options.eye_dir, data_files(v).name), 'eye')
+        else
+            load(sprintf('%s/%s/%s/Despicable_Me_English.mat', options.data_dir, options.patients(pat).name, options.eye_dir), 'eye')
+        end
+
         data = ieeg.data;
         ieeg.data = [];
         
@@ -37,11 +41,20 @@ for pat = 1:length(options.patients)
         time_ieeg = ieeg.time;
         
         % Trigger samples 
-        start_sample = eye.triggers.trigger_sample(eye.triggers.trigger_ID == options.trigger_IDs.start_ID);
+        if contains(data_files(v).name, 'Resting_fixation.mat')
 
-        end_sample = eye.triggers.trigger_sample(eye.triggers.trigger_ID == options.trigger_IDs.end_ID_1);
-        if isempty(end_sample) 
-            end_sample = eye.triggers.trigger_sample(eye.triggers.trigger_ID == options.trigger_IDs.end_ID_2);
+            start_sample = eye.triggers.trigger_sample(1);
+            end_sample = eye.triggers.trigger_sample(2);
+
+        elseif ~contains(data_files(v).name, 'Eyes_Closed_Rest')
+
+            start_sample = eye.triggers.trigger_sample(eye.triggers.trigger_ID == options.trigger_IDs.start_ID);
+    
+            end_sample = eye.triggers.trigger_sample(eye.triggers.trigger_ID == options.trigger_IDs.end_ID_1);
+            if isempty(end_sample) 
+                end_sample = eye.triggers.trigger_sample(eye.triggers.trigger_ID == options.trigger_IDs.end_ID_2);
+            end
+
         end
 
         % Bandpass filter 
@@ -60,7 +73,7 @@ for pat = 1:length(options.patients)
             
             % Hilbert transform of bandpassed signal
             for ch = 1:size(data,2)
-                ieeg.band(:,ch) = BpFilter(data(:,ch), 5, options.freq_bands(f,:), fs_ieeg);
+                ieeg.band(:,ch) = BpFilter(data(:,ch), 5, options.freq_bands{f}, fs_ieeg);
                 ieeg.hilbert(:,ch) = hilbert(ieeg.band(:,ch)); 
             end
             
@@ -79,19 +92,33 @@ for pat = 1:length(options.patients)
             end
             
             % Downsample data to eyetracking data
+            if contains(data_files(v).name, 'Eyes_Closed_Rest')
+               eye.time = ieeg.time(1):1/eye.fs:ieeg.time(end);
+            end
+
             ieeg.envelope = interp1(time_ieeg, ieeg.envelope, eye.time);
             ieeg.band = interp1(time_ieeg, ieeg.band, eye.time);
             ieeg.phase = interp1(time_ieeg, ieeg.phase, eye.time);
-            
+
             % Cut data at triggers
-            ieeg.envelope = ieeg.envelope(start_sample:end_sample, :);
-            ieeg.band = ieeg.band(start_sample:end_sample, :);
-            ieeg.phase = ieeg.phase(start_sample:end_sample, :);
-            
-            % Time and sampling rate
-            ieeg.time = eye.time(start_sample:end_sample);
-            ieeg.fs = eye.fs;
-            
+            if contains(data_files(v).name, 'Eyes_Closed_Rest')
+                
+                ieeg.time = eye.time;
+                ieeg.fs = eye.fs;
+
+            else
+
+                ieeg.envelope = ieeg.envelope(start_sample:end_sample, :);
+                ieeg.band = ieeg.band(start_sample:end_sample, :);
+                ieeg.phase = ieeg.phase(start_sample:end_sample, :);
+                
+                % Time and sampling rate
+                ieeg.time = eye.time(start_sample:end_sample);
+                ieeg.fs = eye.fs;
+
+            end
+
+
             % Resample the envelopes to 60 Hz 
             for ch = 1:size(ieeg.envelope,2)
                 ieeg.envelope(:,ch) = LpFilter(ieeg.envelope(:,ch), 5, ieeg.fs/options.dsf/2, ieeg.fs);
