@@ -1,11 +1,11 @@
 # varx_demo
 
-Code for analysis in: [https://doi.org/10.1101/2024.08.05.606665](https://doi.org/10.7554/eLife.104996.1
-)
+Code for analysis in: https://doi.org/10.7554/eLife.104996.1
 
 VARX toolbox: https://github.com/lcparra/varx/tree/main
 
 Figure data: https://doi.org/10.17605/osf.io/vc25t
+
 
 ## Analysis steps
 
@@ -20,4 +20,12 @@ Figure data: https://doi.org/10.17605/osf.io/vc25t
     + fig2_analyze_model_output.m plots results of the neural mass model simulation analysis.
     + fig3_var_vs_varx.m compares models without external input.
     + fig4_dme_vs_rest.m compares resting state and movie data.
-        + movie_rest_repeated_measures.m performs corresponding statistics with a mixed-effect model. 
+        + movie_rest_repeated_measures.m performs corresponding statistics with a mixed-effect model.
+        + connectivity_plot_movie_vs_rest.py plots connections for an example patient on a brain.
+     
+
+## Python Code
+
+Brain plots are created with python code. Plots in Figure 7 use code from: https://github.com/rdgao/field-echos/tree/master. The environment.yml file provides a list of dependencies. 
+
+hierarchy_dk_atlas.py downloads myelin maps and transforms them in the right space and needs to be run before creating the figure. This requires the Connectome Workbench to be installed: https://www.humanconnectome.org/software/connectome-workbench
