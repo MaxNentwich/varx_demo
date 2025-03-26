@@ -19,13 +19,20 @@ Figure data: https://doi.org/10.17605/osf.io/vc25t
     + fig_1_filter_example.m plots examples of individual feature and data time courses as well as VARX input-response (B) filters.
     + fig2_analyze_model_output.m plots results of the neural mass model simulation analysis.
     + fig3_var_vs_varx.m compares models without external input.
+        + extended_models.m evaluates the effect of individual features, as well as the effect of correlated features and intrinsic connecitons on input filters. 
     + fig4_dme_vs_rest.m compares resting state and movie data.
         + movie_rest_repeated_measures.m performs corresponding statistics with a mixed-effect model.
         + connectivity_plot_movie_vs_rest.py plots connections for an example patient on a brain.
+        + eyes_closed_rest_simple.m compares movie data with eyes-closed rest. 
     + fig5_input_H_vs_TRF.m compares input filters from the VARX and mTRF methods.
     + fig6_innovation_rest_vs_movie_hfa.m examines the effects of modeling inputs on noise in the model.
     + fig7_asymetries.m compares the degreee of incoming and outgoing connections to cortical hierarchy defined by myelination.
-        + plot_varx_dir_myelin_dk.py creates the corresponding brain surface plot     
+        + plot_varx_dir_myelin_dk.py creates the corresponding brain surface plot.
+    + data_summary.m summarize demographics and the length of recordings in Table S1.
+    + figSX_compare_na6_na3.m compares examples of models with a different number of parameters.
+    + eye_params_movies_rest.m compares eye movements in different movies.
+    + fig_S6_innovation_rest_vs_movie_lfp.m examines the innovaiton process in the LFP data.
+    + figS8_simulate_gain_adaptation.m simulates a gain adaptation model. 
      
 
 ## Python Code
