@@ -22,10 +22,14 @@ Figure data: https://doi.org/10.17605/osf.io/vc25t
     + fig4_dme_vs_rest.m compares resting state and movie data.
         + movie_rest_repeated_measures.m performs corresponding statistics with a mixed-effect model.
         + connectivity_plot_movie_vs_rest.py plots connections for an example patient on a brain.
+    + fig5_input_H_vs_TRF.m compares input filters from the VARX and mTRF methods.
+    + fig6_innovation_rest_vs_movie_hfa.m examines the effects of modeling inputs on noise in the model.
+    + fig7_asymetries.m compares the degreee of incoming and outgoing connections to cortical hierarchy defined by myelination.
+        + plot_varx_dir_myelin_dk.py creates the corresponding brain surface plot     
      
 
 ## Python Code
 
 Brain plots are created with python code. Plots in Figure 7 use code from: https://github.com/rdgao/field-echos/tree/master. The environment.yml file provides a list of dependencies. 
 
-hierarchy_dk_atlas.py downloads myelin maps and transforms them in the right space and needs to be run before creating the figure. This requires the Connectome Workbench to be installed: https://www.humanconnectome.org/software/connectome-workbench
+hierarchy_dk_atlas.py downloads myelin maps and transforms them in the right space and needs to be run before creating the figure with plot_varx_dir_myelin_dk.py . This requires the Connectome Workbench to be installed: https://www.humanconnectome.org/software/connectome-workbench
