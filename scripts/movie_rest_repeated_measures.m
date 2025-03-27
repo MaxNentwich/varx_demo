@@ -8,8 +8,10 @@ model_dir = '../results/models_revision_1';
 fig_dir = '../results/figures';
 if exist(fig_dir, 'dir') == 0, mkdir(fig_dir), end
 
+font_size = 20;
+
 %% Define patients
-signal_type = 'LFP';
+signal_type = 'HFA';
 
 % Movie segment 
 conditions = {'Resting_fixation', 'Despicable_Me_English_5min', 'Despicable_Me_English_last_5min', 'Inscapes_5min', 'Monkey_5min'};
@@ -24,7 +26,9 @@ load('../data/movie_subs_table.mat', 'movie_subs_table');
 sig_channels = false;
 p_thresh = 0.001;
 
-if exist('movie_rest_stats.mat', 'file') == 0
+res_file = sprintf('../data/movie_rest_stats_%s.mat');
+
+if exist(res_file, 'file') == 0
 
     % Initialize array to collect data
     R_values = nan(length(patients), length(conditions));
@@ -86,10 +90,10 @@ if exist('movie_rest_stats.mat', 'file') == 0
     T_chn = table(conditions_vec, chn_mat(:,1), chn_mat(:,2), ...
         'VariableNames', {'movie_type', 'rest', 'movies'});
     
-    save('movie_rest_stats.mat', 'T_R', 'T_chn', 'patients')
+    save(res_file, 'T_R', 'T_chn', 'patients')
 
 else
-    load('movie_rest_stats.mat', 'T_R', 'T_chn', 'patients')
+    load(res_file, 'T_R', 'T_chn', 'patients')
 end
 
 Cond = table([1 2]','VariableNames',{'Conditions'});
@@ -97,26 +101,21 @@ Cond = table([1 2]','VariableNames',{'Conditions'});
 
 
 %% Tests
-% 
-% % Repeated measures ANOVA (parametric)
-% rm_R = fitrm(T_R, 'rest-movies~movie_type', 'WithinDesign', Cond);
-% ranovatbl_R = ranova(rm_R);
-% 
-% p_R_param = ranovatbl_R.pValue(1);
-% 
-% % Friedman test (non-parametric)
-% p_R_non_param = friedman(table2array(T_R(:, 2:end), length(patients)));
-% 
-% %% Significant channels
-% 
-% % Repeated measures ANOVA (parametric)
-% rm_chn = fitrm(T_chn, 'rest-movies~movie_type', 'WithinDesign', Cond);
-% ranovatbl_chn = ranova(rm_chn);
-% 
-% p_chn_param = ranovatbl_chn.pValue(1);
-% 
-% % Friedman test (non-parametric)
-% p_chn_non_param = friedman(table2array(T_chn(:, 2:end), length(patients)));
+
+%% Linear mixed effect model
+% Remove outlier
+N = length(patients);
+
+R = [T_R.movies; T_R.rest(1:length(patients))];
+chn = [T_chn.movies; T_chn.rest(1:length(patients))];
+type = [T_R.movie_type; repmat({'Rest'}, length(patients), 1)];
+stim = [ones(height(T_R),1); zeros(length(patients),1)];
+subjects = repmat(patients, length(R) / length(patients), 1);
+
+T = table(type,R,chn,subjects,stim);
+
+fitlme(T,'R ~ stim  + (1|subjects)')
+fitlme(T,'chn ~ stim  + (1|subjects)')
 
 %% Reorganize again for a plot
 movies = unique(T_R.movie_type);
@@ -136,61 +135,64 @@ for m = 1:length(movies)
 
 end
 
-R_mat = mean(R_mat);
-ch_mat = mean(ch_mat);
+R_avg = mean(R_mat);
+ch_avg = mean(ch_mat);
 
 R_diff = R_mat - R_rest;
-ch_diff = ch_mat - ch_rest;
+ch_diff = ch_avg - ch_rest;
 
 %% Figure
-figure('Position', [400,300,675,450])
+R_plot = [R_rest; R_avg];
+ch_plot = [ch_rest; ch_avg];
 
-tiledlayout(1,9);
+figure('Position', [1000,750,750,450])
+
+% Significant Channels
+tiledlayout(1,10);
 
 nexttile(1,[1,4])
 hold on
 
-scatter(0.1*randn(1, length(ch_diff)), ch_diff, 'k', 'filled')
+plot(ch_plot(:, diff(ch_plot) > 0), '.-', 'Color', [0.75, 0.3, 0], 'LineWidth', 2, 'MarkerSize', 20)
+plot(ch_plot(:, diff(ch_plot) < 0), '.-', 'Color', [0, 0.3, 0.75], 'LineWidth', 2, 'MarkerSize', 20)
 
-plot([-0.3, 0.3], zeros(2,1), 'k', 'LineWidth', 2)
-plot([-0.25, 0.25], median(ch_diff)*ones(2,1), 'k--')
+xticks([1, 2])
+xticklabels({'Rest', 'Movies'})
+xtickangle(45)
+xlim([0.75, 2.25])
 
-grid on
-box on
-xticks([])
-xlim([-0.3, 0.3])
-ylim_abs =  1.2 * max(abs(ch_diff));
-ylim([-ylim_abs, ylim_abs])
+ylabel('Fraction of Channels')
 set(gca, 'YAxisLocation', 'right')
-ylabel(['\DeltaRatio' newline '(Movie - Rest)'])
+ylim([0.9*min(ch_plot(:)), 1.1*max(ch_plot(:))])
 
-ax = ancestor(gca, 'axes');
-ax.YAxis.Exponent = 0;
-ytickformat('%0.3f')
-
+fontsize(font_size, 'Points')
 title(['Significant' newline 'Connections'])
 
+grid on
+
 % Effect size
-nexttile(6,[1,4])
+nexttile(5,[1,4])
 hold on 
 
-scatter(0.1*randn(1, length(R_diff)), R_diff, 'k', 'filled')
+plot(R_plot(:, diff(R_plot) > 0), '.-', 'Color', [0.75, 0.3, 0], 'LineWidth', 2, 'MarkerSize', 20)
+plot(R_plot(:, diff(R_plot) < 0), '.-', 'Color', [0, 0.3, 0.75], 'LineWidth', 2, 'MarkerSize', 20)
 
-plot([-0.3, 0.3], zeros(2,1), 'k', 'LineWidth', 2)
-plot([-0.25, 0.25], median(R_diff)*ones(2,1), 'k--')
+xticks([1, 2])
+xticklabels({'Rest', 'Movies'})
+xtickangle(45)
+xlim([0.75, 2.25])
+
+ylabel('R')
+set(gca, 'YAxisLocation', 'right')
+ylim([0.95*min(R_plot(:)), 1.05*max(R_plot(:))])
+
+fontsize(font_size, 'Points')
+title('Effect Size')
 
 grid on
-box on
-xticks([])
-xlim([-0.3, 0.3])
-ylim_abs =  1.2 * max(abs(R_diff));
-ylim([-ylim_abs, ylim_abs])
-set(gca, 'YAxisLocation', 'right')
-ylabel(['\DeltaR' newline '(Movie - Rest)'])
 
-title(['Effect' newline 'Size'])
-
-fontsize(gcf, 20, 'points')
+legend(['Increase', repmat({''}, 1, length(R_plot)-2), 'Decrease'], ...
+    'Position', [0.77,0.02,0.21,0.15]);
 
 exportgraphics(gcf, sprintf('%s/fig4_connectivity_dme_rest_summary_%s_movie_avg.png', ...
     fig_dir, signal_type), 'Resolution', 600)

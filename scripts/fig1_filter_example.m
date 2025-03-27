@@ -64,7 +64,7 @@ end
 
 % Define paths and parameters
 data_dir = '/media/max/Workspace/Data/movies_legacy_sample/';
-et_dir = '/media/DATA/ECoGData/Tobii/Patients';
+et_dir = '/media/max/e61df479-8f57-4855-b852-04ccdfb12a6c/ECoGData/Tobii/Patients';
 cut_dir = '../data/scene_cuts_frames';
 speech_dir = '../data/speech_files';
 sample_data_dir = '/media/max/Workspace/Data/varx_data';
@@ -88,7 +88,7 @@ video = video_select;
 
 vid_file = [data_dir pat '/LFP/' video];
 
-label_dir = sprintf('/media/DATA/ECoGData/Tobii/Patients/%s/matlab_data/Envelope_phase/BHA', pat);
+label_dir = sprintf('/media/max/e61df479-8f57-4855-b852-04ccdfb12a6c/ECoGData/Tobii/Patients/%s/matlab_data/Envelope_phase/BHA', pat);
 
 load([data_dir pat '/LFP/' video],'lfp','fs');
 load([data_dir pat '/BHA/' video],'envelope');

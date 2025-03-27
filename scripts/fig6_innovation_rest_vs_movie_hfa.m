@@ -14,7 +14,7 @@ end
 last = 1;
 subject_order = 1:length(subjects); subject_order(last)=[]; subject_order=[subject_order last];
 
-font_size = 9;
+font_size = 11;
 
 % Poster settings
 poster_size = false;

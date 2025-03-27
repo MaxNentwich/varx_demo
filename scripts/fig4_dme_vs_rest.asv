@@ -1,7 +1,9 @@
 %% Figure 1 Difference between Despicable Me English and resting fixation 
 
 %% Figure settings
-fig_font = 16;
+fig_font = 20;
+
+model_dir = '../results/models_revision_1';
 
 fig_dir = '../results/figures';
 if exist(fig_dir, 'dir') == 0, mkdir(fig_dir), end
@@ -17,11 +19,11 @@ example_pat = 'NS127_02';
 
 signal_type = 'LFP';
 
-% Movie segment ['Despicable_Me_English_5min', 'Despicable_Me_English_last_5min', 'Inscapes_5min', 'Inscapes_last_5min', 'Monkey_5min']
+% Movie segment ['Despicable_Me_English_5min', 'Despicable_Me_English_last_5min', 'Inscapes_5min', 'Inscapes_last_5min', 'Monkey_5min', 'Eyes_Closed_Rest']
 movie_select = 'Despicable_Me_English_5min';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
-patients = patient_list.Patient(table2array(sum(patient_list(:,2:end),2) == 2));
+patients = patient_list.Patient(table2array(sum(patient_list(:,2:3),2) == 2));
 
 % Movie table for coordinates
 load('../data/movie_subs_table.mat', 'movie_subs_table');
@@ -47,6 +49,7 @@ end
 varX_Rvalue_dme = cell(1, length(patients));
 varX_Rvalue_rest = cell(1, length(patients));
 varX_pvalue_dme = cell(1, length(patients));
+varX_Rvalue_dme_shift = cell(1, length(patients));
 varX_pvalue_rest = cell(1, length(patients));
 varx_R_diff = cell(1, length(patients));
 varx_diff_mean = nan(1, length(patients));
@@ -58,9 +61,9 @@ for pat = 1:length(patients)
     
     % Load data
     if strcmp(signal_type, 'LFP')
-        load(sprintf('../results/models/%s_varx_models.mat', patients{pat}), 'm_varx_mov', 'vid_recs', 'labels')
+        load(sprintf('%s/%s_varx_models.mat', model_dir, patients{pat}), 'm_varx_mov', 'vid_recs', 'labels')
     elseif strcmp(signal_type, 'HFA')
-        load(sprintf('../results/models/%s_varx_models.mat', patients{pat}), 'm_varx_mov_hfa', 'vid_recs', 'labels')
+        load(sprintf('%s/%s_varx_models.mat', model_dir, patients{pat}), 'm_varx_mov_hfa', 'vid_recs', 'labels')
         m_varx_mov = m_varx_mov_hfa;
     end
 
@@ -73,7 +76,7 @@ for pat = 1:length(patients)
 
     % Compute R values
     varX_Rvalue_dme{pat} = abs(sqrt(1-exp(-m_varx_mov{idx_dme_5}.A_Deviance/m_varx_mov{idx_dme_5}.T)));  
-    varX_Rvalue_dme_shift = abs(sqrt(1-exp(-m_varx_mov{idx_dme_shift}.A_Deviance/m_varx_mov{idx_dme_shift}.T)));  
+    varX_Rvalue_dme_shift{pat} = abs(sqrt(1-exp(-m_varx_mov{idx_dme_shift}.A_Deviance/m_varx_mov{idx_dme_shift}.T)));  
     varX_Rvalue_rest{pat} = abs(sqrt(1-exp(-m_varx_mov{idx_rest}.A_Deviance/m_varx_mov{idx_rest}.T)));  
 
     %% Difference of significant connections
@@ -95,11 +98,11 @@ for pat = 1:length(patients)
 
     varX_Rvalue_dme{pat}(idx_sig ~= 1) = 0;
     varX_Rvalue_rest{pat}(idx_sig ~= 1) = 0;
-    varX_Rvalue_dme_shift(idx_sig_shift ~= 1) = 0;
+    varX_Rvalue_dme_shift{pat}(idx_sig_shift ~= 1) = 0;
 
     % Compute difference of R values
     varx_R_diff{pat} = varX_Rvalue_dme{pat} - varX_Rvalue_rest{pat};
-    varx_R_diff_dme = varX_Rvalue_dme{pat} - varX_Rvalue_dme_shift;
+    varx_R_diff_dme = varX_Rvalue_dme{pat} - varX_Rvalue_dme_shift{pat};
 
     % Vectorize and compute median
     varx_R_diff_vec = varx_R_diff{pat}(idx_sig == 1);
@@ -144,27 +147,21 @@ varx_diff_dme_mean(idx_empty) = [];
 n_sig_diff(idx_empty) = [];
 
 %% Compute differences and stats
-[~, p_n_sig, ~, stat_n_sig] = ttest(n_sig_diff);
-[~, p_effect_size, ~, stat_effect_size] = ttest(varx_diff_mean);
-[~, p_movie, ~, stat_movie] = ttest(varx_diff_dme_mean);
-
 p_n_sig = signrank(n_sig_diff);
 p_effect_size = signrank(varx_diff_mean);
 p_movie = signrank(varx_diff_dme_mean);
 
-fprintf('Ratio of significant channels: median=%1.4f, p=%1.2f, N=%d\n', ...
+fprintf('Ratio of significant channels: median=%1.1e, p=%1.2f, N=%d\n', ...
     median(n_sig_diff), p_n_sig, length(n_sig_diff))
-fprintf('Effect size: median=%1.1e, p=%1.5f, N=%d\n', ...
+fprintf('Effect size: median=%1.1e, p=%1.2f, N=%d\n', ...
     median(varx_diff_mean), p_effect_size, length(varx_diff_mean))
 fprintf('Movie features median=%1.1e, p=%1.5f, N=%d\n', ...
     median(varx_diff_dme_mean), p_movie, length(varx_diff_dme_mean))
 
-fprintf('Effect size: t(%d)=%1.2f, p=%1.5f\n', ...
-    stat_effect_size.df, stat_effect_size.tstat, p_effect_size)
-fprintf('Movie features: t(%d)=%1.2f, p=%1.5f\n', ...
-    stat_movie.df, stat_movie.tstat, p_movie)
-
 %% Save the data for a spatial plot
+R_dme = cellfun(@(C) mean(C(:)), varX_Rvalue_dme);
+R_dme_shift = cellfun(@(C) mean(C(:)), varX_Rvalue_dme_shift);
+
 idx_example = ismember(patients, example_pat);
 
 varX_Rvalue_rest = varX_Rvalue_rest{idx_example};
@@ -294,26 +291,52 @@ exportgraphics(gcf, sprintf('%s/fig4_connectivity_dme_rest_summary_%s_%s.png', .
     fig_dir, signal_type, movie_select), 'Resolution', 600)
 
 %% Positive control showing movie data does differ when more features are included
+R_plot = [R_dme; R_dme_shift];
+R_plot = R_plot / max(R_plot(:));
+
 figure('Position', [450,200,275,300])
 hold on 
 
-scatter(0.1*randn(1, length(varx_diff_dme_mean)), varx_diff_dme_mean, 'k', 'filled')
+plot(R_plot(:, diff(R_plot) > 0), '.-', 'Color', [0.75, 0.3, 0], 'LineWidth', 2, 'MarkerSize', 20)
+plot(R_plot(:, diff(R_plot) < 0), '.-', 'Color', [0, 0.3, 0.75], 'LineWidth', 2, 'MarkerSize', 20)
 
-plot([-0.3, 0.3], zeros(2,1), 'k', 'LineWidth', 2)
-plot([-0.25, 0.25], median(varx_diff_dme_mean)*ones(2,1), 'k--')
+xticks([1, 2])
+xticklabels({'Movies', 'Rest'})
+xtickangle(45)
+xlim([0.75, 2.25])
+
+ylabel('R')
+set(gca, 'YAxisLocation', 'right')
+ylim([1.05*min(R_plot(:)), 1.05*max(R_plot(:))])
+
+fontsize(fig_font, 'Points')
+title('Effect Size')
 
 grid on
-box on
-xticks([])
-xlim([-0.3, 0.3])
-ylim_abs =  1.2 * max(abs(varx_diff_dme_mean));
-ylim([-ylim_abs, ylim_abs])
-set(gca, 'YAxisLocation', 'right')
-ylabel(['\DeltaR' newline '(Inputs - No Inputs)'])
 
-title('Movie')
+legend(['Increase', repmat({''}, 1, length(R_plot)-2), 'Decrease'], ...
+    'Position', [0.77,0.02,0.21,0.15]);
 
-fontsize(gcf, fig_font, 'points')
+% figure('Position', [450,200,275,300])
+% hold on 
+% 
+% scatter(0.1*randn(1, length(varx_diff_dme_mean)), varx_diff_dme_mean, 'k', 'filled')
+% 
+% plot([-0.3, 0.3], zeros(2,1), 'k', 'LineWidth', 2)
+% plot([-0.25, 0.25], median(varx_diff_dme_mean)*ones(2,1), 'k--')
+% 
+% grid on
+% box on
+% xticks([])
+% xlim([-0.3, 0.3])
+% ylim_abs =  1.2 * max(abs(varx_diff_dme_mean));
+% ylim([-ylim_abs, ylim_abs])
+% set(gca, 'YAxisLocation', 'right')
+% ylabel(['\DeltaR' newline '(Inputs - No Inputs)'])
+% 
+% title('Movie')
+% 
+% fontsize(gcf, fig_font, 'points')
 
 exportgraphics(gcf, sprintf('%s/fig4_connectivity_dme_features_summary_%s.png', ...
     fig_dir, signal_type), 'Resolution', 300)

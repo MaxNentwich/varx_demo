@@ -5,10 +5,10 @@ model_dir = '../results/models_revision_1';
 
 example_pat = 'NS127_02';
 
-signal_type = 'LFP';
+signal_type = 'HFA';
 
 % Stimulus 'fixations', 'film_cuts', 'audio_env'
-stim = 'audio_env';
+stim = 'fixations';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient;

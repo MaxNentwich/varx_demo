@@ -546,6 +546,14 @@ for pat = 1:length(patients)
             m_varx_mov_hfa{end+1} = varx(HFA_vid_end,na_hfa,X_dme5_end,nb,gamma);
             vids_indiv{end+1} = 'Despicable_Me_English_last_5min';
 
+            % Unaligned features
+            idx_shift = round(length(X_dme5_end)/2);
+            X_dme5_end_shift = [X_dme5_end(idx_shift+1:end, :); X_dme5_end(1:idx_shift, :)];
+
+            m_varx_mov{end+1} = varx(Y_dme5_end,na,X_dme5_end_shift,nb,gamma);
+            m_varx_mov_hfa{end+1} = varx(HFA_vid_end,na_hfa,X_dme5_end_shift,nb,gamma);
+            vids_indiv{end+1} = 'Despicable_Me_English_last_5min_shift';
+
             % Edit model with resting state data to contain the same features
             if ismember('Resting_fixation', vid_recs)
 
@@ -586,6 +594,14 @@ for pat = 1:length(patients)
             m_varx_mov_hfa{end+1} = varx(HFA_insc,na_hfa,X_insc,nb,gamma);
             vids_indiv{end+1} = 'Inscapes_5min';
 
+            % Unaligned features
+            idx_shift = round(length(X_insc)/2);
+            X_insc_shift = [X_insc(idx_shift+1:end, :); X_insc(1:idx_shift, :)];
+
+            m_varx_mov{end+1} = varx(Y_insc,na,X_insc_shift,nb,gamma);
+            m_varx_mov_hfa{end+1} = varx(HFA_insc,na_hfa,X_insc_shift,nb,gamma);
+            vids_indiv{end+1} = 'Inscapes_5min_shift';
+
             % Second half
             Y_insc_end = Y{idx_vid}(end-fs*300:end-1, :);
             HFA_insc_end = HFA{idx_vid}(end-fs*300:end-1, :);
@@ -610,6 +626,14 @@ for pat = 1:length(patients)
             m_varx_mov{end+1} = varx(Y_monkey,na,X_monkey,nb,gamma);
             m_varx_mov_hfa{end+1} = varx(HFA_monkey,na_hfa,X_monkey,nb,gamma);
             vids_indiv{end+1} = 'Monkey_5min';
+
+            % Unaligned features
+            idx_shift = round(length(X_monkey)/2);
+            X_monkey_shift = [X_monkey(idx_shift+1:end, :); X_monkey(1:idx_shift, :)];
+
+            m_varx_mov{end+1} = varx(Y_monkey,na,X_monkey_shift,nb,gamma);
+            m_varx_mov_hfa{end+1} = varx(HFA_monkey,na_hfa,X_monkey_shift,nb,gamma);
+            vids_indiv{end+1} = 'Monkey_5min_shift';
 
 
         end

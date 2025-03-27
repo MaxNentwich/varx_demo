@@ -4,7 +4,7 @@ addpath('../src/Violinplot-Matlab-master/'); % https://github.com/bastibe/Violin
 subjects = dir('/media/max/Workspace/Data/varx_data/NS*');
 condition = {'Despicable_Me_English_5min.mat', 'Resting_fixation.mat',};
 
-font_size = 9;
+font_size = 11;
 
 % Poster settings
 poster_size = false;

@@ -133,18 +133,18 @@ t = tiledlayout(1,3);
 
 ax1 = nexttile;
 
-imagesc(mat_varx)
+imagesc(mat_var)
 
 clim(ax1, plot_range)
 axis square
 colormap(ax1, slanCM(cmap))
 xlabel('Channels')
 ylabel('Channels')
-title('Inputs')
+title('No Inputs')
 
 ax2 = nexttile;
 
-imagesc(mat_var)
+imagesc(mat_varx)
 
 clim(ax2, plot_range)
 axis square
@@ -157,18 +157,18 @@ elseif strcmp(example_val, 'rval')
 end
 xlabel('Channels')
 yticks([])
-title('No Inputs')
+title('Inputs')
 
 ax3 = nexttile;
 
-imagesc(mat_varx - mat_var)
+imagesc(mat_var - mat_varx)
 
 clim(ax3, 0.05*plot_range_diff)
 
 axis square
 colormap(ax3, slanCM('bwr'))
 cb = colorbar(); 
-ylabel(cb,['\Delta log p-value' newline '(Input - No Input)'] ,'Rotation',90)
+ylabel(cb,['\Delta log p-value' newline '(No Input - Input)'] ,'Rotation',90)
 xlabel('Channels')
 yticks([])
 title('Difference')
@@ -179,63 +179,121 @@ exportgraphics(fig1, sprintf('%s/fig3_varx_full_none_example_%s_%s.png', ...
     fig_dir, example_pat, signal_type), 'Resolution', 600)
 
 %% Difference of significant connections and R values over all paitents
+R_varx = cellfun(@(C) abs(mean(C(:))), varx_Rvalue);
+R_var = cellfun(@(C) abs(mean(C(:))), var_Rvalue);
 
-if poster_size 
-    figure('Units', 'inches', 'Position', [1,1,8.5,5]);
-else
-    figure('Position', [400,300,725,450])
-end
+R_plot = [R_var; R_varx];
+ch_plot = [n_sig_var; n_sig_varx];
 
-tiledlayout(1,9);
+R_plot = R_plot - R_plot(1,:);
+ch_plot = ch_plot - ch_plot(1,:);
 
-% Violin plot of differences for one paitent
+figure('Position', [1000,750,750,450])
+
+% Significant Channels
+tiledlayout(1,10);
+
 nexttile(1,[1,4])
 hold on
 
-scatter(0.1*randn(1, length(n_sig_diff)), n_sig_diff, 'k', 'filled')
+plot(ch_plot(:, diff(ch_plot) > 0), '.-', 'Color', [0.75, 0.3, 0], 'LineWidth', 2, 'MarkerSize', 20)
+plot(ch_plot(:, diff(ch_plot) <= 0), '.-', 'Color', [0, 0.3, 0.75], 'LineWidth', 2, 'MarkerSize', 20)
 
-plot([-0.3, 0.3], zeros(2,1), 'k', 'LineWidth', 2)
-plot([-0.25, 0.25], median(n_sig_diff)*ones(2,1), 'k--')
+xticks([1, 2])
+xticklabels({'No Input', 'Input'})
+xtickangle(45)
+xlim([0.75, 2.25])
 
-grid on
-box on
-xticks([])
-xlim([-0.3, 0.3])
-ylim_abs =  1.2 * max(abs(n_sig_diff));
-ylim([-ylim_abs, ylim_abs])
+ylabel('Fraction of Channels')
 set(gca, 'YAxisLocation', 'right')
-ylabel(['\DeltaRatio' newline '(Input - No Input)'])
+ylim([1.1*min(ch_plot(:)), 1.1*max(ch_plot(:))])
 
+fontsize(fig_font, 'Points')
 title(['Significant' newline 'Connections'])
 
-ax = ancestor(gca, 'axes');
-ax.YAxis.Exponent = 0;
-if strcmp(signal_type, 'LFP')
-    ytickformat('%0.3f')
-elseif strcmp(signal_type, 'HFA')
-    ytickformat('%0.4f')
-end
-
-%% Effect size on same panel 
-nexttile(6,[1,4])
-hold on 
-
-scatter(0.1*randn(1, length(r_diff_mean)), r_diff_mean, 'k', 'filled')
-plot([-0.3, 0.3], zeros(2,1), 'k', 'LineWidth', 2)
-plot([-0.25, 0.25], median(r_diff_mean)*ones(2,1), 'k--')
-ylim_abs =  1.2 * max(abs(r_diff_mean));
+legend(['Increase', repmat({''}, 1, length(ch_plot)-2), 'Decrease'], ...
+    'Position', [0.77,0.02,0.22,0.15]);
 
 grid on
-box on
-xticks([])
-xlim([-0.3, 0.3])
-ylim([-ylim_abs, ylim_abs])
+
+% Effect size
+nexttile(5,[1,4])
+hold on 
+
+plot(R_plot(:, diff(R_plot) > 0), '.-', 'Color', [0.75, 0.3, 0], 'LineWidth', 2, 'MarkerSize', 20)
+plot(R_plot(:, diff(R_plot) < 0), '.-', 'Color', [0, 0.3, 0.75], 'LineWidth', 2, 'MarkerSize', 20)
+
+xticks([1, 2])
+xticklabels({'No Input', 'Input'})
+xtickangle(45)
+xlim([0.75, 2.25])
+
+ylabel('R')
 set(gca, 'YAxisLocation', 'right')
-ylabel(['Mean \DeltaR' newline '(Input - No Input)'])
+ylim([1.1*min(R_plot(:)), 1.05*max(R_plot(:))])
 
-title(['Effect' newline 'size'])
+fontsize(fig_font, 'Points')
+title('Effect Size')
 
-fontsize(gcf, fig_font, 'points')
+grid on
 
 exportgraphics(gcf, sprintf('%s/fig3_varx_full_none_sig_ch_diff_R_%s_sig_ch_%d.png', ...
     fig_dir, signal_type, select_sig), 'Resolution', 600)
+
+%% 
+% if poster_size 
+%     figure('Units', 'inches', 'Position', [1,1,8.5,5]);
+% else
+%     figure('Position', [400,300,725,450])
+% end
+% 
+% tiledlayout(1,9);
+% 
+% % Violin plot of differences for one paitent
+% nexttile(1,[1,4])
+% hold on
+% 
+% scatter(0.1*randn(1, length(n_sig_diff)), n_sig_diff, 'k', 'filled')
+% 
+% plot([-0.3, 0.3], zeros(2,1), 'k', 'LineWidth', 2)
+% plot([-0.25, 0.25], median(n_sig_diff)*ones(2,1), 'k--')
+% 
+% grid on
+% box on
+% xticks([])
+% xlim([-0.3, 0.3])
+% ylim_abs =  1.2 * max(abs(n_sig_diff));
+% ylim([-ylim_abs, ylim_abs])
+% set(gca, 'YAxisLocation', 'right')
+% ylabel(['\DeltaRatio' newline '(Input - No Input)'])
+% 
+% title(['Significant' newline 'Connections'])
+% 
+% ax = ancestor(gca, 'axes');
+% ax.YAxis.Exponent = 0;
+% if strcmp(signal_type, 'LFP')
+%     ytickformat('%0.3f')
+% elseif strcmp(signal_type, 'HFA')
+%     ytickformat('%0.4f')
+% end
+% 
+% %% Effect size on same panel 
+% nexttile(6,[1,4])
+% hold on 
+% 
+% scatter(0.1*randn(1, length(r_diff_mean)), r_diff_mean, 'k', 'filled')
+% plot([-0.3, 0.3], zeros(2,1), 'k', 'LineWidth', 2)
+% plot([-0.25, 0.25], median(r_diff_mean)*ones(2,1), 'k--')
+% ylim_abs =  1.2 * max(abs(r_diff_mean));
+% 
+% grid on
+% box on
+% xticks([])
+% xlim([-0.3, 0.3])
+% ylim([-ylim_abs, ylim_abs])
+% set(gca, 'YAxisLocation', 'right')
+% ylabel(['Mean \DeltaR' newline '(Input - No Input)'])
+% 
+% title(['Effect' newline 'size'])
+% 
+% fontsize(gcf, fig_font, 'points')

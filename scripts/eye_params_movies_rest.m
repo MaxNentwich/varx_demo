@@ -5,8 +5,8 @@ fig_font = 16;
 fig_dir = '../results/figures';
 
 % Source directories
-data_dir = '/media/DATA/ECoGData/Tobii/Patients';
-saccade_dir = '/media/DATA/ieeg_plot/Data/saccade_data';
+data_dir = '/media/max/e61df479-8f57-4855-b852-04ccdfb12a6c/ECoGData/Tobii/Patients';
+saccade_dir = '/media/max/Workspace/Data/saccade_data';
 
 % List of patients 
 patient_list = readtable('../data/varx_patient_list.xlsx');

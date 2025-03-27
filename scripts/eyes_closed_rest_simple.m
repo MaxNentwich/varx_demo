@@ -14,6 +14,12 @@ fig_font = 20;
 mean_vec_closed = nan(1, length(pats_rest_closed));
 d_sig_closed = nan(1, length(pats_rest_closed));
 
+R_movie = nan(1, length(pats_rest_closed));
+R_rest = nan(1, length(pats_rest_closed));
+
+n_sig_movie = nan(1, length(pats_rest_closed));
+n_sig_rest = nan(1, length(pats_rest_closed));
+
 for pat = 1:length(pats_rest_closed)
 
     % Load data
@@ -39,7 +45,7 @@ for pat = 1:length(pats_rest_closed)
     if strcmp(pats_rest_closed{pat}, 'NS155_02')
       
         example_mat = {R_dme, R_rest_closed};
-        example_titles = {'Despicable Me (VARX)', 'Eyes Closed (VAR)'}; 
+        example_titles = {'Movie', 'Rest (eyes-closed)'}; 
         example_short = {'R_dme', 'R_rest_closed'};
 
         for e = 1:length(example_mat)
@@ -48,12 +54,13 @@ for pat = 1:length(pats_rest_closed)
             imagesc(example_mat{e})
             colormap(slanCM('Reds'))
             clim([0, 0.15])
-            colorbar
+            cb = colorbar;
+            cb.Label.String = 'R';
             axis square
             xlabel('Channels')
             ylabel('Channels')
             title(example_titles{e})
-            fontsize(16, 'Points')
+            fontsize(fig_font, 'Points')
             exportgraphics(gcf, ...
                 sprintf('%s/revision_S2_%s_mat.png', fig_dir, example_short{e}), ...
                 'Resolution', 300)
@@ -69,6 +76,9 @@ for pat = 1:length(pats_rest_closed)
     % Compute difference of R values
     R_diff_closed = R_dme - R_rest_closed;
 
+    R_movie(pat) = mean(R_dme(:));
+    R_rest(pat) = mean(R_rest_closed(:));
+
     Rd_vec_closed = R_diff_closed(idx_sig == 1);
     mean_vec_closed(pat) = mean(Rd_vec_closed);
     
@@ -76,10 +86,10 @@ for pat = 1:length(pats_rest_closed)
     n_ch = size(p_dme,1);
     n_conn = n_ch^2 - n_ch;
     
-    n_sig_dme5 = (sum(p_dme(:) < p_thresh) - n_ch) / n_conn;
-    n_sig_closed = (sum(p_closed(:) < p_thresh) - n_ch) / n_conn;
+    n_sig_movie(pat) = (sum(p_dme(:) < p_thresh) - n_ch) / n_conn;
+    n_sig_rest(pat) = (sum(p_closed(:) < p_thresh) - n_ch) / n_conn;
     
-    d_sig_closed(pat) = n_sig_dme5 - n_sig_closed;
+    d_sig_closed(pat) = n_sig_movie(pat) - n_sig_rest(pat);
 
 end
 
@@ -88,55 +98,108 @@ fprintf('Eyes Closed Rest VARX, Delta R = %1.4f, p = %1.2f, N = %d\n', median(me
 fprintf('Eyes Closed Rest VARX, Sig. Chans = %1.4f, p = %1.2f, N = %d\n', median(d_sig_closed), signrank(d_sig_closed), length(d_sig_closed))
 
 %% Figures
-figure('Position', [400,300,675,450])
+R_plot = [R_rest; R_movie];
+ch_plot = [n_sig_rest; n_sig_movie];
 
-tiledlayout(1,9);
+figure('Position', [1000,750,750,450])
 
-% Violin plot of differences for one paitent
+% Significant Channels
+tiledlayout(1,10);
+
 nexttile(1,[1,4])
 hold on
 
-scatter(0.1*randn(1, length(d_sig_closed)), d_sig_closed, 'k', 'filled')
+plot(ch_plot(:, diff(ch_plot) > 0), '.-', 'Color', [0.75, 0.3, 0], 'LineWidth', 2, 'MarkerSize', 20)
+plot(ch_plot(:, diff(ch_plot) < 0), '.-', 'Color', [0, 0.3, 0.75], 'LineWidth', 2, 'MarkerSize', 20)
 
-plot([-0.3, 0.3], zeros(2,1), 'k', 'LineWidth', 2)
-plot([-0.25, 0.25], median(d_sig_closed)*ones(2,1), 'k--')
+xticks([1, 2])
+xticklabels({'Rest', 'Movie'})
+xtickangle(45)
+xlim([0.75, 2.25])
 
-grid on
-box on
-xticks([])
-xlim([-0.3, 0.3])
-ylim_abs =  1.2 * max(abs(d_sig_closed));
-ylim([-ylim_abs, ylim_abs])
+ylabel('Fraction of Channels')
 set(gca, 'YAxisLocation', 'right')
-ylabel(['\DeltaRatio' newline '(Movie - Rest)'])
+ylim([0.9*min(ch_plot(:)), 1.1*max(ch_plot(:))])
 
-ax = ancestor(gca, 'axes');
-ax.YAxis.Exponent = 0;
-ytickformat('%0.3f')
+legend(['Increase', repmat({''}, 1, length(R_plot)-2), 'Decrease'], ...
+    'Position', [0.77,0.02,0.22,0.15]);
 
+fontsize(fig_font, 'Points')
 title(['Significant' newline 'Connections'])
 
+grid on
+
 % Effect size
-nexttile(6,[1,4])
+nexttile(5,[1,4])
 hold on 
 
-scatter(0.1*randn(1, length(mean_vec_closed)), mean_vec_closed, 'k', 'filled')
+plot(R_plot(:, diff(R_plot) > 0), '.-', 'Color', [0.75, 0.3, 0], 'LineWidth', 2, 'MarkerSize', 20)
+plot(R_plot(:, diff(R_plot) < 0), '.-', 'Color', [0, 0.3, 0.75], 'LineWidth', 2, 'MarkerSize', 20)
 
-plot([-0.3, 0.3], zeros(2,1), 'k', 'LineWidth', 2)
-plot([-0.25, 0.25], median(mean_vec_closed)*ones(2,1), 'k--')
+xticks([1, 2])
+xticklabels({'Movies', 'Rest'})
+xtickangle(45)
+xlim([0.75, 2.25])
+
+ylabel('R')
+set(gca, 'YAxisLocation', 'right')
+ylim([0.95*min(R_plot(:)), 1.05*max(R_plot(:))])
+
+fontsize(fig_font, 'Points')
+title('Effect Size')
 
 grid on
-box on
-xticks([])
-xlim([-0.3, 0.3])
-ylim_abs =  1.2 * max(abs(mean_vec_closed));
-ylim([-ylim_abs, ylim_abs])
-set(gca, 'YAxisLocation', 'right')
-ylabel(['\DeltaR' newline '(Movie - Rest)'])
-
-title(['Effect' newline 'Size'])
-
-fontsize(gcf, fig_font, 'points')
 
 exportgraphics(gcf, sprintf('%s/fig4_connectivity_dme_rest_summary_LFP_eyes_closed_rest.png', ...
     fig_dir), 'Resolution', 600)
+
+% tiledlayout(1,9);
+% 
+% % Violin plot of differences for one paitent
+% nexttile(1,[1,4])
+% hold on
+% 
+% scatter(0.1*randn(1, length(d_sig_closed)), d_sig_closed, 'k', 'filled')
+% 
+% plot([-0.3, 0.3], zeros(2,1), 'k', 'LineWidth', 2)
+% plot([-0.25, 0.25], median(d_sig_closed)*ones(2,1), 'k--')
+% 
+% grid on
+% box on
+% xticks([])
+% xlim([-0.3, 0.3])
+% ylim_abs =  1.2 * max(abs(d_sig_closed));
+% ylim([-ylim_abs, ylim_abs])
+% set(gca, 'YAxisLocation', 'right')
+% ylabel(['\DeltaRatio' newline '(Movie - Rest)'])
+% 
+% ax = ancestor(gca, 'axes');
+% ax.YAxis.Exponent = 0;
+% ytickformat('%0.3f')
+% 
+% title(['Significant' newline 'Connections'])
+% 
+% % Effect size
+% nexttile(6,[1,4])
+% hold on 
+% 
+% scatter(0.1*randn(1, length(mean_vec_closed)), mean_vec_closed, 'k', 'filled')
+% 
+% plot([-0.3, 0.3], zeros(2,1), 'k', 'LineWidth', 2)
+% plot([-0.25, 0.25], median(mean_vec_closed)*ones(2,1), 'k--')
+% 
+% grid on
+% box on
+% xticks([])
+% xlim([-0.3, 0.3])
+% ylim_abs =  1.2 * max(abs(mean_vec_closed));
+% ylim([-ylim_abs, ylim_abs])
+% set(gca, 'YAxisLocation', 'right')
+% ylabel(['\DeltaR' newline '(Movie - Rest)'])
+% 
+% title(['Effect' newline 'Size'])
+% 
+% fontsize(gcf, fig_font, 'points')
+% 
+% exportgraphics(gcf, sprintf('%s/fig4_connectivity_dme_rest_summary_LFP_eyes_closed_rest.png', ...
+%     fig_dir), 'Resolution', 600)
