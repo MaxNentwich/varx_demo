@@ -180,13 +180,15 @@ end
 
 hold on 
 
+error_color = 0.5*ones(1,3);
+
 for m = 1:length(map_vals)
     plot(map_vals(m)*[1,1], median_area(m) + error_area(m)*[-1,1], ...
-        'Color', [0.6, 0.6, 0.6], 'LineWidth', 0.3)
+        'Color', error_color, 'LineWidth', 1)
     plot(map_vals(m)*[0.995, 1.005], (median_area(m)-error_area(m))*[1,1], ...
-        'Color', [0.6, 0.6, 0.6], 'LineWidth', 0.3)
+        'Color', error_color, 'LineWidth', 1)
     plot(map_vals(m)*[0.995, 1.005], (median_area(m)+error_area(m))*[1,1], ...
-        'Color', [0.6, 0.6, 0.6], 'LineWidth', 0.3)
+        'Color', error_color, 'LineWidth', 1)
 end
 
 scatter(map_vals, median_area, 'filled', 'k')
@@ -195,7 +197,6 @@ plot(map_vals, median_area_h, 'r')
 xlabel('T1w/T2w ratio')
 ylabel('Mean R-R^T')
 xlim([min(map_vals)-0.01, max(map_vals)+0.01])
-grid on
 fontsize(gcf, fig_font, 'points')
 set(gca, 'XDir', 'reverse')
 
