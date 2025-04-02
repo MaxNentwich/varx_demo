@@ -43,7 +43,7 @@ sig_channels = false;
 p_thresh = 0.001;
 
 % Poster settings
-poster_size = false;
+poster_size = true;
 
 if poster_size
     fig_font = 26;
@@ -178,12 +178,15 @@ varX_pvalue_rest = varX_pvalue_rest{idx_example};
 varX_pvalue_dme = varX_pvalue_dme{idx_example};
 
 coords = coords{idx_example};
-save(sprintf('%s/fig4_matrices_rest_movie_coords.mat', coord_dir), ...
-    'varX_Rvalue_rest', 'varX_Rvalue_dme', 'varX_pvalue_rest', 'varX_pvalue_dme', 'coords')
 
-%% Plot an example
 plot_max = max([max(varX_Rvalue_dme(:)), max(varX_Rvalue_rest(:))]);
 plot_range = [0, plot_max];
+
+save(sprintf('%s/fig4_matrices_rest_movie_coords.mat', coord_dir), ...
+    'varX_Rvalue_rest', 'varX_Rvalue_dme', 'varX_pvalue_rest', 'varX_pvalue_dme', ...
+    'coords', 'plot_range')
+
+%% Plot an example
 
 if poster_size 
     figure('Units', 'inches', 'Position', [1,1,20,5]);
@@ -196,11 +199,11 @@ tiledlayout(1,3);
 % Connectitivy of Despicable Me
 ax1 = nexttile;
 
-
 imagesc(varX_Rvalue_rest)
 
-clim([0, 0.08])
+clim(plot_range)
 axis square
+colormap(ax1, flipud(slanCM('amber')))
 colormap(ax1, slanCM('Reds'))
 ylabel('Channels')
 xlabel('Channels')
@@ -212,8 +215,9 @@ ax2 = nexttile;
 
 imagesc(varX_Rvalue_dme)
 
-clim([0, 0.08])
+clim(plot_range)
 axis square
+colormap(ax2, flipud(slanCM('amber')))
 colormap(ax2, slanCM('Reds'))
 cb = colorbar(); 
 ylabel(cb,'R' ,'Rotation',90)

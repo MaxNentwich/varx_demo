@@ -15,6 +15,8 @@ signal_type = 'HFA';
 
 % Movie segment 
 conditions = {'Resting_fixation', 'Despicable_Me_English_5min', 'Despicable_Me_English_last_5min', 'Inscapes_5min', 'Monkey_5min'};
+% conditions = {'Resting_fixation_shift', 'Despicable_Me_English_5min_shift', ...
+%     'Despicable_Me_English_last_5min_shift', 'Inscapes_5min_shift', 'Monkey_5min_shift'};
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient(table2array(sum(patient_list(:,2:3),2) == 2));

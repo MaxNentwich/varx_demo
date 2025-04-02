@@ -2,7 +2,7 @@
 
 %% Define patients
 example_pat = 'NS127_02';
-signal_type = 'HFA';
+signal_type = 'LFP';
 
 patient_list = readtable('../data/varx_patient_list.xlsx');
 patients = patient_list.Patient;
@@ -213,16 +213,16 @@ fprintf('r=%1.3f, p=%1.3f\n', r_area, p_area)
 % fprintf('r=%1.3f, p=%1.3f\n', r_area, p_area)
 
 % Any patients outliers?
-% figure('Position', [1000,750,675,450])
-% plot(direction_area_pat, 'o-')
-% xticklabels(cellfun(@(C) strrep(C, '_', ' '), pat_u{idx_out}, 'UniformOutput', false))
-% ylabel('Mean R-R^T')
-% xtickangle(45)
-% title(areas{idx_out})
-% grid on
-% fontsize(gcf, fig_font, 'points')
-% 
-% exportgraphics(gcf, sprintf('%s/fig7_direction_vs_%s_%s_outlier_per_patient.png', fig_dir, annot_name, signal_type), 'Resolution', 300)
+figure('Position', [1000,750,675,450])
+plot(direction_area_pat{idx_out}, 'o-')
+xticklabels(cellfun(@(C) strrep(C, '_', ' '), pat_u{idx_out}, 'UniformOutput', false))
+ylabel('Mean R-R^T')
+xtickangle(45)
+title(areas{idx_out})
+grid on
+fontsize(gcf, fig_font, 'points')
+
+exportgraphics(gcf, sprintf('%s/fig7_direction_vs_%s_%s_outlier_per_patient.png', fig_dir, annot_name, signal_type), 'Resolution', 300)
 
 %% Linear mixed effect model
 area_labels = {};

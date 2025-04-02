@@ -41,6 +41,8 @@ varx_R_movie[np.invert(idx_sig)] = np.nan
 
 plt.rcParams.update({'font.size': 18})
 
+plot_range = data['plot_range'][0]
+
 #%% Rest
 plotting.plot_connectome(
     varx_R_rest,
@@ -48,7 +50,7 @@ plotting.plot_connectome(
     node_color='k',
     edge_threshold=0,
     edge_vmin=0, 
-    edge_vmax=0.08,
+    edge_vmax=plot_range[1],
     node_size=2,
     edge_cmap='Reds',
     edge_kwargs={'linewidth':2},
@@ -68,7 +70,7 @@ plotting.plot_connectome(
     node_color='k',
     edge_threshold=0,
     edge_vmin=0, 
-    edge_vmax=0.08,
+    edge_vmax=plot_range[1],
     node_size=2,
     edge_cmap='Reds',
     edge_kwargs={'linewidth':2},
@@ -87,8 +89,8 @@ plotting.plot_connectome(
     coordinates,
     node_color='k',
     edge_threshold=0,
-    edge_vmin=-0.08, 
-    edge_vmax=0.08,
+    edge_vmin=-plot_range[1], 
+    edge_vmax=plot_range[1],
     node_size=2,
     edge_cmap='seismic',
     edge_kwargs={'linewidth':2},
