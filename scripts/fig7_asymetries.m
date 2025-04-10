@@ -43,6 +43,7 @@ end
 varx_R_asym = cell(1, length(patients));
 loc = cell(1, length(patients));
 direction_contact = cell(1, length(patients));
+pat_name = cell(1, length(patients));
 
 for pat = 1:length(patients)
     
@@ -73,6 +74,8 @@ for pat = 1:length(patients)
     [loc{pat}, ~, ~] = localize_elecs_bipolar(labels_coord, 'dk');
     loc{pat} = loc{pat}';
 
+    pat_name{pat} = repmat({patients{pat}}, 1, length(labels_coord));
+
     % Normalize number of electrodes
     if norm_areas
 
@@ -94,6 +97,7 @@ end
 %% Direction by brain area
 loc_all = cat(2, loc{:});
 direction_contact = cell2mat(direction_contact);
+pat_name = [pat_name{:}];
 
 areas = unique(loc_all);
 areas(ismember(areas, {'accumbens', ...
@@ -106,15 +110,33 @@ areas(ismember(areas, {'accumbens', ...
 
 direction_area = cell(length(areas), 1);
 median_area = nan(length(areas), 1);
+patient_area = cell(length(areas), 1);
+pat_u = cell(length(areas), 1);
+direction_area_pat = cell(length(areas), 1);
 
 for a = 1:length(areas)
+
     direction_area{a} = direction_contact(ismember(loc_all, areas{a}));
     median_area(a) = median(direction_area{a});
+
+    patient_area{a} = pat_name(ismember(loc_all, areas{a}));
+
+    pat_u{a} = unique(patient_area{a});
+    direction_area_pat{a} = zeros(1, length(pat_u{a}));
+
+    for u = 1:length(pat_u{a})
+        direction_area_pat{a}(u) = median(direction_area{a}(ismember(patient_area{a}, pat_u{a}{u})));
+    end
+
 end
 
 [~,idx_sort] = sort(median_area, 'descend');
 areas = areas(idx_sort);
 median_area = median_area(idx_sort);
+patient_area = patient_area(idx_sort);
+pat_u = pat_u(idx_sort);
+direction_area = direction_area(idx_sort);
+direction_area_pat = direction_area_pat(idx_sort);
 
 %% Correlate with myelination (cortical hierarchy)
 annot_data = readtable(sprintf('../data/%s_lh_parcels_aparc.xlsx', annot_name));
@@ -134,6 +156,12 @@ idx_areas = cell2mat(idx_areas(~idx_empty));
 
 areas = areas(idx_areas);
 median_area = median_area(idx_areas);
+patient_area = patient_area(idx_areas);
+pat_u = pat_u(idx_areas);
+direction_area = direction_area(idx_areas);
+direction_area_pat = direction_area_pat(idx_areas);
+
+error_area = cellfun(@(C) std(C)/sqrt(length(C)), direction_area_pat);
 
 % Save
 varx_dir = table(areas', median_area, 'VariableNames', {'parcel_name', 'varx_dir'});
@@ -151,13 +179,24 @@ else
 end
 
 hold on 
-scatter(map_vals, median_area, 'filled')
-plot(map_vals, median_area_h, 'k')
+
+error_color = 0.5*ones(1,3);
+
+for m = 1:length(map_vals)
+    plot(map_vals(m)*[1,1], median_area(m) + error_area(m)*[-1,1], ...
+        'Color', error_color, 'LineWidth', 1)
+    plot(map_vals(m)*[0.995, 1.005], (median_area(m)-error_area(m))*[1,1], ...
+        'Color', error_color, 'LineWidth', 1)
+    plot(map_vals(m)*[0.995, 1.005], (median_area(m)+error_area(m))*[1,1], ...
+        'Color', error_color, 'LineWidth', 1)
+end
+
+scatter(map_vals, median_area, 'filled', 'k')
+plot(map_vals, median_area_h, 'r')
 
 xlabel('T1w/T2w ratio')
 ylabel('Mean R-R^T')
 xlim([min(map_vals)-0.01, max(map_vals)+0.01])
-grid on
 fontsize(gcf, fig_font, 'points')
 set(gca, 'XDir', 'reverse')
 
@@ -166,6 +205,43 @@ exportgraphics(gcf, sprintf('%s/fig7_direction_vs_%s_%s.png', fig_dir, annot_nam
 [r_area, p_area] = corr(map_vals, median_area);
 
 fprintf('r=%1.3f, p=%1.3f\n', r_area, p_area)
+
+% % Without oultier
+% idx_out = find(ismember(areas, 'transversetemporal'));
+% idx_keep = setdiff(1:length(areas), idx_out);
+% 
+% [r_area, p_area] = corr(map_vals(idx_keep), median_area(idx_keep));
+% fprintf('r=%1.3f, p=%1.3f\n', r_area, p_area)
+
+% Any patients outliers?
+% figure('Position', [1000,750,675,450])
+% plot(direction_area_pat, 'o-')
+% xticklabels(cellfun(@(C) strrep(C, '_', ' '), pat_u{idx_out}, 'UniformOutput', false))
+% ylabel('Mean R-R^T')
+% xtickangle(45)
+% title(areas{idx_out})
+% grid on
+% fontsize(gcf, fig_font, 'points')
+% 
+% exportgraphics(gcf, sprintf('%s/fig7_direction_vs_%s_%s_outlier_per_patient.png', fig_dir, annot_name, signal_type), 'Resolution', 300)
+
+%% Linear mixed effect model
+area_labels = {};
+map_all = [];
+for a = 1:length(areas)
+    area_labels = [area_labels; repmat({areas{a}}, length(direction_area_pat{a}), 1)];
+    map_all = [map_all; repmat(map_vals(a), length(direction_area_pat{a}), 1)];
+end
+
+direction_area_pat = cell2mat(direction_area_pat')';
+patient_labels = [pat_u{:}]';
+
+T = table(patient_labels, area_labels, direction_area_pat, map_all, ...
+    'VariableNames', {'patient', 'area', 'direction', 'gradient'});
+
+fitlme(T, 'direction ~ gradient  + (1|patient)')
+
+save(sprintf('../results/stats/asymetry_stats_%s.mat', signal_type), 'T')
 
 %% Plot example of matrix for one patient -> order by hierarchy
 
