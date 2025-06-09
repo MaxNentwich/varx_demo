@@ -2,7 +2,7 @@
 
 <a href="https://doi.org/10.5281/zenodo.15127333"><img src="https://zenodo.org/badge/832732261.svg" alt="DOI"></a>
 
-Code for analysis in: [https://doi.org/10.7554/eLife.104996.1](https://doi.org/10.7554/eLife.104996.2)
+Code for analysis in: https://doi.org/10.7554/eLife.104996.2
 
 VARX toolbox: https://github.com/lcparra/varx/tree/main
 
