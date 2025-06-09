@@ -2,7 +2,7 @@
 
 %% Define paths and parameters
 data_dir = '/media/max/Workspace/Data/movies_legacy_sample/';
-et_dir = '/media/max/e61df479-8f57-4855-b852-04ccdfb12a6c/ECoGData/Tobii/Patients';
+et_dir = '/media/max/12T_HDD/ECoGData/Tobii/Patients';
 cut_dir = '../data/scene_cuts_frames';
 contrast_dir = '../data/ContrastFull';
 motion_dir = '../data/Optic_flow';

@@ -3,7 +3,7 @@ addpath('../../matlab/')
 %%
 % Figure 2 -> Rest, symmetric; Inludes Figure S1 -> 'fig_2
 % Figure S2 -> asymmetric - 'fig_s2'
-fig_select = 'fig_s2';
+fig_select = 'fig_2';
 
 if strcmp(fig_select, 'fig_2')
     load ../../data/neurolib_model_output_rest.mat
@@ -148,7 +148,7 @@ if strcmp(fig_select, 'fig_2')
     colormap(gca,'parula')
     colorbar
 
-    fontsize(8, 'points')
+    fontsize(11, 'points')
 
     exportgraphics(gcf,'../../results/figures/fig_S1_neurolib_A_matrix.png','Resolution',300)
 
